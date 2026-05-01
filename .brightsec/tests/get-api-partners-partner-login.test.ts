@@ -1,0 +1,49 @@
+import { test, before, after } from 'node:test';
+import { SecRunner } from '@sectester/runner';
+import { AttackParamLocation, HttpMethod } from '@sectester/scan';
+
+const timeout = 40 * 60 * 1000;
+const baseUrl = process.env.BRIGHT_TARGET_URL!;
+const poolSize = process.env.SECTESTER_SCAN_POOL_SIZE ? Number(process.env.SECTESTER_SCAN_POOL_SIZE) || undefined : undefined;
+
+let runner!: SecRunner;
+
+before(async () => {
+  runner = new SecRunner({
+    hostname: process.env.BRIGHT_HOSTNAME!,
+    projectId: process.env.BRIGHT_PROJECT_ID!
+  });
+
+  await runner.init();
+});
+
+after(() => runner.clear());
+
+test('GET /api/partners/partnerLogin', { signal: AbortSignal.timeout(timeout) }, async () => {
+  await runner
+    .createScan({
+      tests: [
+        'xpathi',
+        'xss',
+        'full_path_disclosure',
+        'http_method_fuzzing',
+        'csrf',
+        'secret_tokens',
+        'html_injection',
+        'xxe'
+      ],
+      attackParamLocations: [AttackParamLocation.QUERY],
+      starMetadata: {
+        code_source: 'denis-maiorov-brightsec/brokencrystals:stable',
+        databases: ['PostgreSQL', 'MikroORM'],
+        user_roles: ['admin', 'user']
+      },
+      poolSize
+    })
+    .setFailFast(false)
+    .timeout(timeout)
+    .run({
+      method: HttpMethod.GET,
+      url: `${baseUrl}/api/partners/partnerLogin?password=Heisenberg123&username=walter100`
+    });
+});
