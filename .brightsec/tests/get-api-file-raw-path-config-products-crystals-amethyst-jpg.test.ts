@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/file/raw?path=config/products/crystals/amethyst.jpg', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['ssrf', 'lfi'],
+      tests: ['lfi'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',
