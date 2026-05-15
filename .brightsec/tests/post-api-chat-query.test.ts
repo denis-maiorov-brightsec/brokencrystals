@@ -1,0 +1,46 @@
+import { test, before, after } from 'node:test';
+import { SecRunner } from '@sectester/runner';
+import { AttackParamLocation, HttpMethod } from '@sectester/scan';
+
+const timeout = 40 * 60 * 1000;
+const baseUrl = process.env.BRIGHT_TARGET_URL!;
+
+let runner!: SecRunner;
+
+before(async () => {
+  runner = new SecRunner({
+    hostname: process.env.BRIGHT_HOSTNAME!,
+    projectId: process.env.BRIGHT_PROJECT_ID!
+  });
+
+  await runner.init();
+});
+
+after(() => runner.clear());
+
+test('POST /api/chat/query', { signal: AbortSignal.timeout(timeout) }, async () => {
+  await runner
+    .createScan({
+      tests: ['csrf', 'sqli', 'xss', 'osi', 'ssrf'],
+      attackParamLocations: [AttackParamLocation.BODY],
+      starMetadata: {
+        code_source: 'denis-maiorov-brightsec/brokencrystals:stable',
+        databases: ['PostgreSQL'],
+        user_roles: ['admin', 'user']
+      },
+      poolSize: +process.env.SECTESTER_SCAN_POOL_SIZE || undefined
+    })
+    .setFailFast(false)
+    .timeout(timeout)
+    .run({
+      method: HttpMethod.POST,
+      url: `${baseUrl}/api/chat/query`,
+      body: {
+        messages: [
+          { role: 'user', content: 'Hello, how are you?' },
+          { role: 'assistant', content: "I'm fine, thank you!" }
+        ]
+      },
+      headers: { 'Content-Type': 'application/json' }
+    });
+});
