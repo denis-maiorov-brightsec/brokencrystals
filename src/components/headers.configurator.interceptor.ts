@@ -1,90 +1,30 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 
 @Injectable()
 export class HeadersConfiguratorInterceptor implements NestInterceptor {
-  public static readonly XSS_PROTECTION_HEADER: string = 'x-xss-protection';
-  public static readonly STRICT_TRANSPORT_SECURITY_HEADER: string =
-    'strict-transport-security';
-  public static readonly CONTENT_TYPE_OPTIONS: string =
-    'x-content-type-options';
-  public static readonly CONTENT_SECURITY_POLICY: string =
-    'content-security-policy';
-  public static readonly NO_SEC_HEADERS_QUERY_PARAM: string = 'no-sec-headers';
-  public static readonly COUNTER_COOKIE_NAME = 'bc-calls-counter';
-  private readonly logger = new Logger(HeadersConfiguratorInterceptor.name);
-
-  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = this.getRequest(context);
-
-    const cookies: string[] = req.headers.cookie
-      ? req.headers.cookie.split('; ')
-      : [];
-
-    if (cookies && cookies.length > 0) {
-      const cookie = cookies
-        .reverse()
-        .find((str) =>
-          str.startsWith(HeadersConfiguratorInterceptor.COUNTER_COOKIE_NAME)
-        );
-
-      this.logger.log(`Cookie header: ${cookie}`);
-
-      if (cookie) {
-        const counter = cookie.split('=');
-
-        if (isNaN(+counter[1])) {
-          throw new Error('Invalid counter value');
-        }
-      }
-    }
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const req = context.switchToHttp().getRequest<FastifyRequest>();
+    const res = context.switchToHttp().getResponse<FastifyReply>();
 
     return next.handle().pipe(
       tap(() => {
-        const res = this.getResponse(context);
         res.setCookie('bc-calls-counter', Date.now().toString(), {
           secure: true, // Ensure the cookie is only sent over HTTPS
-          httpOnly: true, // Added HttpOnly flag to enhance security
-          sameSite: 'Strict', // Prevent CSRF attacks by restricting cross-site cookie sending
+          httpOnly: true, // Prevent client-side access to the cookie
+          sameSite: 'Strict', // Restrict cross-site cookie sending
           domain: req.hostname, // Restrict the cookie to the specific domain
-          path: '/' // Ensure the cookie is valid for the entire domain
+          path: '/', // Ensure the cookie is valid for the entire domain
         });
-        if (
-          !req.query[HeadersConfiguratorInterceptor.NO_SEC_HEADERS_QUERY_PARAM]
-        ) {
-          res.header(HeadersConfiguratorInterceptor.XSS_PROTECTION_HEADER, '1; mode=block');
-          res.header(
-            HeadersConfiguratorInterceptor.STRICT_TRANSPORT_SECURITY_HEADER,
-            'max-age=31536000; includeSubDomains; preload'
-          );
-          res.header(HeadersConfiguratorInterceptor.CONTENT_TYPE_OPTIONS, 'nosniff');
-          res.header(
-            HeadersConfiguratorInterceptor.CONTENT_SECURITY_POLICY,
-            `default-src 'self'; script-src 'self'; object-src 'none';`
-          );
-        }
+
+        // Set security headers
+        res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        res.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; object-src 'none';");
+        res.header('X-Content-Type-Options', 'nosniff');
+        res.header('X-XSS-Protection', '1; mode=block');
       })
     );
-  }
-
-  private getRequest(context: ExecutionContext): FastifyRequest {
-    return context.getType<GqlContextType>() === 'graphql'
-      ? GqlExecutionContext.create(context).getContext().req
-      : context.switchToHttp().getRequest();
-  }
-
-  private getResponse(context: ExecutionContext): FastifyReply {
-    return context.getType<GqlContextType>() === 'graphql'
-      ? GqlExecutionContext.create(context).getContext().reply
-      : context.switchToHttp().getResponse();
   }
 }

@@ -44,14 +44,9 @@ export class ProductsService {
 
   async findLatest(limit: number): Promise<Product[]> {
     this.logger.debug(`Find ${limit} latest products`);
-    const maxLimit = 10; // Enforce a maximum limit
-    const effectiveLimit = Math.min(limit, maxLimit);
-    if (effectiveLimit <= 0 || isNaN(effectiveLimit)) {
-      throw new InternalServerErrorException('Invalid limit value');
-    }
     return this.productsRepository.find(
       {},
-      { limit: effectiveLimit, orderBy: { createdAt: 'desc' } }
+      { limit, orderBy: { createdAt: 'desc' } }
     );
   }
 
