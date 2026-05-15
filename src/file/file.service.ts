@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CloudProvidersMetaData } from './cloud.providers.metadata';
 import { R_OK } from 'constants';
-import * as url from 'url';
 
 @Injectable()
 export class FileService {
@@ -15,25 +14,26 @@ export class FileService {
     this.logger.log(`Reading file: ${file}`);
 
     try {
-      if (file.startsWith('/')) {
-        const sanitizedPath = path.normalize(file);
-        if (!sanitizedPath.startsWith('/')) {
-          throw new Error('Invalid file path');
-        }
-        await fs.promises.access(sanitizedPath, R_OK);
+      // Define an allowlist of directories
+      const allowedDirectories = [
+        path.resolve(process.cwd(), 'public'),
+        path.resolve(process.cwd(), 'uploads'),
+      ];
 
-        return fs.createReadStream(sanitizedPath);
-      } else if (file.startsWith('http')) {
-        throw new Error('Remote file access is not allowed');
-      } else {
-        const sanitizedPath = path.resolve(process.cwd(), file);
-        if (!sanitizedPath.startsWith(process.cwd())) {
-          throw new Error('Invalid file path');
-        }
-        await fs.promises.access(sanitizedPath, R_OK);
+      // Resolve and normalize the requested file path
+      const sanitizedPath = path.resolve(process.cwd(), file);
 
-        return fs.createReadStream(sanitizedPath);
+      // Check if the resolved path is within the allowed directories
+      const isAllowed = allowedDirectories.some((dir) => sanitizedPath.startsWith(dir));
+      if (!isAllowed) {
+        throw new Error('Access to the specified file path is not allowed');
       }
+
+      // Check if the file exists and is readable
+      await fs.promises.access(sanitizedPath, R_OK);
+
+      // Return the file as a readable stream
+      return fs.createReadStream(sanitizedPath);
     } catch (error) {
       this.logger.error(`Error accessing file: ${error.message}`);
       throw new Error('An error occurred while accessing the file.');
@@ -41,17 +41,27 @@ export class FileService {
   }
 
   async deleteFile(file: string): Promise<boolean> {
-    if (file.startsWith('/')) {
-      throw new Error('cannot delete file from this location');
-    } else if (file.startsWith('http')) {
-      throw new Error('cannot delete file from this location');
-    } else {
+    try {
+      // Define an allowlist of directories
+      const allowedDirectories = [
+        path.resolve(process.cwd(), 'uploads'),
+      ];
+
+      // Resolve and normalize the requested file path
       const sanitizedPath = path.resolve(process.cwd(), file);
-      if (!sanitizedPath.startsWith(process.cwd())) {
-        throw new Error('Invalid file path');
+
+      // Check if the resolved path is within the allowed directories
+      const isAllowed = allowedDirectories.some((dir) => sanitizedPath.startsWith(dir));
+      if (!isAllowed) {
+        throw new Error('Access to the specified file path is not allowed');
       }
+
+      // Delete the file
       await fs.promises.unlink(sanitizedPath);
       return true;
+    } catch (error) {
+      this.logger.error(`Error deleting file: ${error.message}`);
+      throw new Error('An error occurred while deleting the file.');
     }
   }
 }
