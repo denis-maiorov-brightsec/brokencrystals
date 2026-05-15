@@ -54,7 +54,9 @@ export class HeadersConfiguratorInterceptor implements NestInterceptor {
       tap(() => {
         const res = this.getResponse(context);
         res.setCookie('bc-calls-counter', Date.now().toString(), {
-          secure: false
+          secure: true, // Ensure the cookie is only sent over HTTPS
+          httpOnly: true, // Added HttpOnly flag to enhance security
+          sameSite: 'Strict' // Prevent CSRF attacks by restricting cross-site cookie sending
         });
         if (
           !req.query[HeadersConfiguratorInterceptor.NO_SEC_HEADERS_QUERY_PARAM]

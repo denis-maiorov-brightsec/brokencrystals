@@ -39,7 +39,13 @@ import { McpModule } from './mcp/mcp.module';
       driver: MercuriusDriver,
       graphiql: false, // Disable GraphiQL interface
       autoSchemaFile: true,
-      introspection: false // Disable introspection queries
+      introspection: false, // Disable introspection queries
+      context: ({ req }) => {
+        if (req.body.query && req.body.query.includes('__schema')) {
+          throw new Error('Introspection queries are disabled.');
+        }
+        return { req };
+      }
     }),
     PartnersModule,
     EmailModule,

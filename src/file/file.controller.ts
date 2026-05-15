@@ -33,6 +33,7 @@ import {
   SWAGGER_DESC_SAVE_RAW_CONTENT
 } from './file.controller.swagger.desc';
 import { CloudProvidersMetaData } from './cloud.providers.metadata';
+import * as url from 'url';
 
 @Controller('/api/file')
 @ApiTags('Files controller')
@@ -50,7 +51,8 @@ export class FileController {
   }
 
   private async loadCPFile(cpBaseUrl: string, path: string) {
-    if (!path.startsWith(cpBaseUrl)) {
+    const parsedUrl = new url.URL(path);
+    if (!parsedUrl.hostname || !parsedUrl.hostname.endsWith(cpBaseUrl)) {
       throw new BadRequestException(`Invalid parameter 'path': ${path}`);
     }
 
@@ -169,6 +171,12 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
+    const parsedUrl = new url.URL(path);
+    const allowedHosts = ['s3.amazonaws.com', 'mybucket.s3.amazonaws.com'];
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      throw new BadRequestException('Access to the specified host is not allowed.');
+    }
+
     const file: Stream = await this.loadCPFile(
       CloudProvidersMetaData.AWS,
       path
