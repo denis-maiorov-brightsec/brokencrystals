@@ -11,8 +11,9 @@ export class HeadersConfiguratorInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
+        // Ensure the cookie is set securely
         res.setCookie('bc-calls-counter', Date.now().toString(), {
-          secure: true, // Ensure the cookie is only sent over HTTPS
+          secure: true, // Only send the cookie over HTTPS
           httpOnly: true, // Prevent client-side access to the cookie
           sameSite: 'Strict', // Restrict cross-site cookie sending
           domain: req.hostname, // Restrict the cookie to the specific domain
