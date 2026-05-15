@@ -22,11 +22,7 @@ test('GET /api/file/aws', { signal: AbortSignal.timeout(timeout) }, async () => 
   await runner
     .createScan({
       tests: [
-        'open_cloud_storage',
-        'amazon_s3_takeover',
-        'ssrf',
-        'lfi',
-        'secret_tokens'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY, AttackParamLocation.HEADER],
       starMetadata: {

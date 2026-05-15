@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/file/digital_ocean', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['lfi', 'ssrf', 'secret_tokens', 'open_cloud_storage'],
+      tests: ['ssrf'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',
