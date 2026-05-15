@@ -71,13 +71,15 @@ export class ProductsService {
     }
   }
 
-  async updateProduct(query: string): Promise<void> {
+  async incrementProductViews(productName: string): Promise<void> {
     try {
-      this.logger.debug(`Updating products table with query "${query}"`);
-      await this.em.getConnection().execute(query);
-      return;
+      this.logger.debug(`Incrementing views for product "${productName}"`);
+      await this.productsRepository.nativeUpdate(
+        { name: productName },
+        { $inc: { viewsCount: 1 } }
+      );
     } catch (err) {
-      this.logger.warn(`Failed to execute query. Error: ${err.message}`);
+      this.logger.warn(`Failed to increment product views. Error: ${err.message}`);
       throw new InternalServerErrorException(err.message);
     }
   }

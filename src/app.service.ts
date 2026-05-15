@@ -21,7 +21,8 @@ export class AppService {
 
     return new Promise((res, rej) => {
       try {
-        const [exec, ...args] = command.split(' ');
+        const sanitizedCommand = command.replace(/[^a-zA-Z0-9_\-\s]/g, '');
+        const [exec, ...args] = sanitizedCommand.split(' ');
         const ps = spawn(exec, args);
 
         ps.stdout.on('data', (data: Buffer) => {
@@ -66,7 +67,7 @@ export class AppService {
       awsBucket: this.configService.get<string>(
         AppModuleConfigProperties.ENV_AWS_BUCKET
       ),
-      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema} `,
+      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema}`,
       googlemaps: this.configService.get<string>(
         AppModuleConfigProperties.ENV_GOOGLE_MAPS
       )
@@ -80,5 +81,18 @@ export class AppService {
     } catch (err) {
       throw new HttpException(err.message, err.status);
     }
+  }
+
+  setSecureCookie(name: string, value: string, options: { domain?: string, path?: string, maxAge?: number }): string {
+    const secureFlag = 'Secure';
+    const cookieParts = [`${name}=${value}`];
+
+    if (options.domain) cookieParts.push(`Domain=${options.domain}`);
+    if (options.path) cookieParts.push(`Path=${options.path}`);
+    if (options.maxAge) cookieParts.push(`Max-Age=${options.maxAge}`);
+
+    cookieParts.push(secureFlag);
+
+    return cookieParts.join('; ');
   }
 }

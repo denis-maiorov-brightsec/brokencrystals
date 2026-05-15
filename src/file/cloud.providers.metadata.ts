@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import * as url from 'url';
 
 @Injectable()
 export class CloudProvidersMetaData {
@@ -10,7 +11,7 @@ export class CloudProvidersMetaData {
   public static readonly DIGITAL_OCEAN: string =
     'http://169.254.169.254/metadata/v1';
   public static readonly DIGITAL_OCEAN_JSON: string =
-    'http://169.254.169.254/metadata/v1.json'; //https://docs.digitalocean.com/reference/api/metadata/#tag/Droplet-Properties
+    'http://169.254.169.254/metadata/v1.json';
   public static readonly AWS: string =
     'http://169.254.169.254/latest/meta-data/';
 
@@ -252,6 +253,16 @@ export class CloudProvidersMetaData {
   }
 
   async get(providerUrl: string): Promise<string> {
+    const parsedUrl = new url.URL(providerUrl);
+    const allowedHosts = [
+      'metadata.google.internal',
+      '169.254.169.254',
+    ];
+
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      throw new Error(`Access to the host '${parsedUrl.hostname}' is not allowed.`);
+    }
+
     if (providerUrl.startsWith(CloudProvidersMetaData.GOOGLE)) {
       return this.providers.get(CloudProvidersMetaData.GOOGLE);
     } else if (providerUrl.startsWith(CloudProvidersMetaData.DIGITAL_OCEAN)) {
