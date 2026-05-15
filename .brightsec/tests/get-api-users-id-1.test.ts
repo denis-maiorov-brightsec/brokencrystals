@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/users/id/1', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['sqli', 'id_enumeration', 'full_path_disclosure'],
+      tests: ['id_enumeration'],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

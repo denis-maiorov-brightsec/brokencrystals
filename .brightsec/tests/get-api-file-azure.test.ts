@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/file/azure', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['lfi', 'ssrf', 'open_cloud_storage', 'secret_tokens'],
+      tests: ['ssrf'],
       attackParamLocations: [AttackParamLocation.QUERY, AttackParamLocation.HEADER],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

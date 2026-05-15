@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/secrets', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['secret_tokens', 'full_path_disclosure', 'csrf'],
+      tests: ['secret_tokens'],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

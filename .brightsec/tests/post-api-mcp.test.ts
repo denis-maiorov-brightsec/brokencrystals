@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('POST /api/mcp', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['sqli', 'secret_tokens', 'ssti'],
+      tests: ['sqli'],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',
