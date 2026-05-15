@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CloudProvidersMetaData } from './cloud.providers.metadata';
 import { R_OK } from 'constants';
+import * as url from 'url';
 
 @Injectable()
 export class FileService {
@@ -13,24 +14,29 @@ export class FileService {
   async getFile(file: string): Promise<Readable> {
     this.logger.log(`Reading file: ${file}`);
 
-    if (file.startsWith('/')) {
-      await fs.promises.access(file, R_OK);
+    try {
+      if (file.startsWith('/')) {
+        const sanitizedPath = path.normalize(file);
+        if (!sanitizedPath.startsWith('/')) {
+          throw new Error('Invalid file path');
+        }
+        await fs.promises.access(sanitizedPath, R_OK);
 
-      return fs.createReadStream(file);
-    } else if (file.startsWith('http')) {
-      const content = await this.cloudProviders.get(file);
-
-      if (content) {
-        return Readable.from(content);
+        return fs.createReadStream(sanitizedPath);
+      } else if (file.startsWith('http')) {
+        throw new Error('Remote file access is not allowed');
       } else {
-        throw new Error(`no such file or directory, access '${file}'`);
+        const sanitizedPath = path.resolve(process.cwd(), file);
+        if (!sanitizedPath.startsWith(process.cwd())) {
+          throw new Error('Invalid file path');
+        }
+        await fs.promises.access(sanitizedPath, R_OK);
+
+        return fs.createReadStream(sanitizedPath);
       }
-    } else {
-      file = path.resolve(process.cwd(), file);
-
-      await fs.promises.access(file, R_OK);
-
-      return fs.createReadStream(file);
+    } catch (error) {
+      this.logger.error(`Error accessing file: ${error.message}`);
+      throw new Error('An error occurred while accessing the file.');
     }
   }
 
@@ -40,8 +46,11 @@ export class FileService {
     } else if (file.startsWith('http')) {
       throw new Error('cannot delete file from this location');
     } else {
-      file = path.resolve(process.cwd(), file);
-      await fs.promises.unlink(file);
+      const sanitizedPath = path.resolve(process.cwd(), file);
+      if (!sanitizedPath.startsWith(process.cwd())) {
+        throw new Error('Invalid file path');
+      }
+      await fs.promises.unlink(sanitizedPath);
       return true;
     }
   }

@@ -71,7 +71,9 @@ export class PartnersService {
   }
 
   getPartnersProperties(xpathExpression: string): string {
-    let xmlNodes = this.selectPartnerPropertiesByXPATH(xpathExpression);
+    const sanitizedXPath = this.sanitizeXPath(xpathExpression);
+
+    let xmlNodes = this.selectPartnerPropertiesByXPATH(sanitizedXPath);
 
     if (!Array.isArray(xmlNodes)) {
       this.logger.debug(
@@ -83,5 +85,30 @@ export class PartnersService {
     }
 
     return this.getFormattedXMLOutput(xmlNodes);
+  }
+
+  private sanitizeXPath(xpathExpression: string): string {
+    const forbiddenPatterns = [
+      /\bor\b/i,
+      /\band\b/i,
+      /\|\|/,
+      /\&\&/,
+      /\'\s*\|\s*\'/,
+      /\"\s*\|\s*\"/,
+      /\'\s*\&\s*\'/,
+      /\"\s*\&\s*\"/,
+      /\[\s*\]/, // Empty brackets
+      /\'\s*\]/, // Malformed strings
+      /\"\s*\]/
+    ];
+
+    for (const pattern of forbiddenPatterns) {
+      if (pattern.test(xpathExpression)) {
+        this.logger.error(`Invalid XPath expression detected: ${xpathExpression}`);
+        throw new Error('Invalid XPath expression.');
+      }
+    }
+
+    return xpathExpression.replace(/['"\[\]]/g, ''); // Remove potentially dangerous characters
   }
 }

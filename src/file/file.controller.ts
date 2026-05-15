@@ -51,12 +51,16 @@ export class FileController {
 
   private async loadCPFile(cpBaseUrl: string, path: string) {
     if (!path.startsWith(cpBaseUrl)) {
-      throw new BadRequestException(`Invalid paramater 'path' ${path}`);
+      throw new BadRequestException(`Invalid parameter 'path'`);
     }
 
-    const file: Stream = await this.fileService.getFile(path);
-
-    return file;
+    try {
+      const file: Stream = await this.fileService.getFile(path);
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading file from cloud provider: ${error.message}`);
+      throw new BadRequestException('Failed to load file from cloud provider.');
+    }
   }
 
   @Get()
@@ -87,11 +91,30 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
-    const file: Stream = await this.fileService.getFile(path);
-    const type = this.getContentType(contentType);
-    res.type(type);
+    if (!this.isValidPath(path)) {
+      throw new BadRequestException('Invalid file path.');
+    }
 
-    return file;
+    try {
+      const file: Stream = await this.fileService.getFile(path);
+      const type = this.getContentType(contentType);
+      res.type(type);
+
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading file: ${error.message}`);
+      throw new BadRequestException('Failed to load file.');
+    }
+  }
+
+  private isValidPath(path: string): boolean {
+    const forbiddenPatterns = [
+      /^http:\/\//i,
+      /^https:\/\//i,
+      /\.{2}/, // Prevent directory traversal
+    ];
+
+    return !forbiddenPatterns.some((pattern) => pattern.test(path));
   }
 
   @Get('/google')
@@ -122,14 +145,19 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
-    const file: Stream = await this.loadCPFile(
-      CloudProvidersMetaData.GOOGLE,
-      path
-    );
-    const type = this.getContentType(contentType);
-    res.type(type);
+    try {
+      const file: Stream = await this.loadCPFile(
+        CloudProvidersMetaData.GOOGLE,
+        path
+      );
+      const type = this.getContentType(contentType);
+      res.type(type);
 
-    return file;
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading Google file: ${error.message}`);
+      throw new BadRequestException('Failed to load Google file.');
+    }
   }
 
   @Get('/aws')
@@ -160,14 +188,19 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
-    const file: Stream = await this.loadCPFile(
-      CloudProvidersMetaData.AWS,
-      path
-    );
-    const type = this.getContentType(contentType);
-    res.type(type);
+    try {
+      const file: Stream = await this.loadCPFile(
+        CloudProvidersMetaData.AWS,
+        path
+      );
+      const type = this.getContentType(contentType);
+      res.type(type);
 
-    return file;
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading AWS file: ${error.message}`);
+      throw new BadRequestException('Failed to load AWS file.');
+    }
   }
 
   @Get('/azure')
@@ -198,14 +231,19 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
-    const file: Stream = await this.loadCPFile(
-      CloudProvidersMetaData.AZURE,
-      path
-    );
-    const type = this.getContentType(contentType);
-    res.type(type);
+    try {
+      const file: Stream = await this.loadCPFile(
+        CloudProvidersMetaData.AZURE,
+        path
+      );
+      const type = this.getContentType(contentType);
+      res.type(type);
 
-    return file;
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading Azure file: ${error.message}`);
+      throw new BadRequestException('Failed to load Azure file.');
+    }
   }
 
   @Get('/digital_ocean')
@@ -236,14 +274,19 @@ export class FileController {
     @Query('type') contentType: string,
     @Res({ passthrough: true }) res: FastifyReply
   ) {
-    const file: Stream = await this.loadCPFile(
-      CloudProvidersMetaData.DIGITAL_OCEAN,
-      path
-    );
-    const type = this.getContentType(contentType);
-    res.type(type);
+    try {
+      const file: Stream = await this.loadCPFile(
+        CloudProvidersMetaData.DIGITAL_OCEAN,
+        path
+      );
+      const type = this.getContentType(contentType);
+      res.type(type);
 
-    return file;
+      return file;
+    } catch (error) {
+      this.logger.error(`Error loading Digital Ocean file: ${error.message}`);
+      throw new BadRequestException('Failed to load Digital Ocean file.');
+    }
   }
 
   @Delete()
@@ -268,7 +311,12 @@ export class FileController {
     description: 'File deleted successfully'
   })
   async deleteFile(@Query('path') path: string): Promise<void> {
-    await this.fileService.deleteFile(path);
+    try {
+      await this.fileService.deleteFile(path);
+    } catch (error) {
+      this.logger.error(`Error deleting file: ${error.message}`);
+      throw new BadRequestException('Failed to delete file.');
+    }
   }
 
   @Put('raw')
@@ -292,8 +340,8 @@ export class FileController {
         return `File uploaded successfully at ${file}`;
       }
     } catch (err) {
-      this.logger.error(err.message);
-      throw err.message;
+      this.logger.error(`Error uploading file: ${err.message}`);
+      throw new BadRequestException('Failed to upload file.');
     }
   }
 
@@ -322,18 +370,24 @@ export class FileController {
 
       return stream;
     } catch (err) {
-      this.logger.error(err.message);
+      this.logger.error(`Error reading file: ${err.message}`);
       res.status(HttpStatus.NOT_FOUND);
+      throw new BadRequestException('File not found.');
     }
   }
 
   @GrpcMethod('FileService', 'ReadFile')
   async readFileGrpc(data: { path: string }): Promise<{ content: string }> {
-    const stream = await this.fileService.getFile(data.path);
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk));
+    try {
+      const stream = await this.fileService.getFile(data.path);
+      const chunks = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return { content: Buffer.concat(chunks).toString('utf-8') };
+    } catch (error) {
+      this.logger.error(`Error reading file via gRPC: ${error.message}`);
+      throw new BadRequestException('Failed to read file via gRPC.');
     }
-    return { content: Buffer.concat(chunks).toString('utf-8') };
   }
 }
