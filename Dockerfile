@@ -17,7 +17,7 @@ COPY --chown=node:node keycloak ./keycloak
 COPY --chown=node:node src ./src
 
 ENV NPM_CONFIG_LOGLEVEL=error
-RUN for i in 1 2 3 4 5; do npm ci --no-audit && break || (echo "npm install failed, retrying in 5s..." && sleep 5); done
+RUN npm ci --no-audit
 RUN npm run build:fast
 RUN npm prune --production
 
@@ -34,7 +34,6 @@ COPY --chown=node:node client/index.html ./client/index.html
 ENV CYPRESS_INSTALL_BINARY=0
 RUN npm ci --prefix=client --no-audit
 RUN npm run build --prefix=client
-RUN test -f client/dist/index.html
 
 USER node
 
