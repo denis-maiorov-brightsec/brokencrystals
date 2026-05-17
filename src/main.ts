@@ -7,7 +7,7 @@ import fastifyHttpProxy from '@fastify/http-proxy';
 import session from '@fastify/session';
 import { GlobalExceptionFilter } from './components/global-exception.filter';
 import * as os from 'os';
-import { readFileSync, readFile, readdirSync } from 'fs';
+import { readFileSync, readFile, readdirSync, existsSync } from 'fs';
 import cluster from 'cluster';
 import {
   FastifyAdapter,
@@ -86,14 +86,16 @@ async function bootstrap() {
     onProtoPoisoning: 'ignore',
     https:
       process.env.NODE_ENV === 'production'
-        ? {
-            cert: readFileSync(
-              '/etc/letsencrypt/live/brokencrystals.com/fullchain.pem'
-            ),
-            key: readFileSync(
-              '/etc/letsencrypt/live/brokencrystals.com/privkey.pem'
-            )
-          }
+        ? (existsSync('/etc/letsencrypt/live/brokencrystals.com/fullchain.pem') && existsSync('/etc/letsencrypt/live/brokencrystals.com/privkey.pem')
+            ? {
+                cert: readFileSync(
+                  '/etc/letsencrypt/live/brokencrystals.com/fullchain.pem'
+                ),
+                key: readFileSync(
+                  '/etc/letsencrypt/live/brokencrystals.com/privkey.pem'
+                )
+              }
+            : null)
         : null
   });
 
