@@ -61,7 +61,7 @@ export class PartnersService {
 
   private sanitizeXPathInput(input: string): string {
     // Replace potentially dangerous characters with safe alternatives
-    return input.replace(/['"\\]/g, '');
+    return input.replace(/['"\]/g, '');
   }
 
   private selectPartnerPropertiesByXPATH(

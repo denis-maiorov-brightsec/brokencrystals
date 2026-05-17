@@ -19,7 +19,7 @@ COPY --chown=node:node src ./src
 ENV NPM_CONFIG_LOGLEVEL=error
 RUN npm ci --no-audit
 RUN npm run build:fast
-RUN npm prune --omit=dev
+RUN npm prune --production
 
 # Copy and build client project
 COPY --chown=node:node client/package*.json ./client/
@@ -55,9 +55,5 @@ COPY --chown=node:node --from=build /usr/src/app/dist ./dist
 
 COPY --chown=node:node --from=build /usr/src/app/client/dist ./client/dist
 COPY --chown=node:node --from=build /usr/src/app/client/vcs ./client/vcs
-COPY --chown=node:node --from=build /usr/src/app/client/public ./client/public
-COPY --chown=node:node --from=build /usr/src/app/client/typings ./client/typings
-COPY --chown=node:node --from=build /usr/src/app/client/vite.config.ts ./client/vite.config.ts
-COPY --chown=node:node --from=build /usr/src/app/client/index.html ./client/index.html
 
 CMD ["npm", "run", "start:prod"]
