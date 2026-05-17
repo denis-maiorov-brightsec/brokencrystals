@@ -59,6 +59,11 @@ export class PartnersService {
     return partnersXMLObj as unknown as Node;
   }
 
+  private sanitizeXPathInput(input: string): string {
+    // Replace potentially dangerous characters with safe alternatives
+    return input.replace(/['"\]/g, '');
+  }
+
   private selectPartnerPropertiesByXPATH(
     xpathExpression: string
   ): SelectReturnType {
@@ -71,7 +76,8 @@ export class PartnersService {
   }
 
   getPartnersProperties(xpathExpression: string): string {
-    let xmlNodes = this.selectPartnerPropertiesByXPATH(xpathExpression);
+    const sanitizedXPath = this.sanitizeXPathInput(xpathExpression);
+    let xmlNodes = this.selectPartnerPropertiesByXPATH(sanitizedXPath);
 
     if (!Array.isArray(xmlNodes)) {
       this.logger.debug(

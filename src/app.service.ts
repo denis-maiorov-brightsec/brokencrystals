@@ -19,6 +19,11 @@ export class AppService {
   async launchCommand(command: string): Promise<string> {
     this.logger.debug(`launch ${command} command`);
 
+    // Validate and sanitize the command input
+    if (!/^[a-zA-Z0-9-_]+(\s[a-zA-Z0-9-_]+)*$/.test(command)) {
+      throw new HttpException('Invalid command input', 400);
+    }
+
     return new Promise((res, rej) => {
       try {
         const [exec, ...args] = command.split(' ');
@@ -66,7 +71,7 @@ export class AppService {
       awsBucket: this.configService.get<string>(
         AppModuleConfigProperties.ENV_AWS_BUCKET
       ),
-      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema} `,
+      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema}`,
       googlemaps: this.configService.get<string>(
         AppModuleConfigProperties.ENV_GOOGLE_MAPS
       )

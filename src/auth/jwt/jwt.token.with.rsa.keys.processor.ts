@@ -15,8 +15,13 @@ export class JwtTokenWithRSAKeysProcessor extends JwtTokenProcessor {
 
     const [header, payload] = this.parse(token);
     if (header.alg === 'none') {
-      return payload;
+      throw new Error('Tokens with "none" algorithm are not allowed.');
     }
+
+    if (!['RS256', 'RS512'].includes(header.alg)) {
+      throw new Error(`Unsupported algorithm: ${header.alg}`);
+    }
+
     return decode(token, this.publicKey, false, header.alg);
   }
 

@@ -62,15 +62,11 @@ export class EmailController {
   ) {
     this.logger.log('Sending a support Email');
 
-    // This is defined here intentionally so we don't override responseJson.status after the prototype pollution has occurred
     const responseJson = {
       message: {},
       status: HttpStatus.OK
     };
 
-    // "Accidentally" forgot this here while coding... Oops.
-    // A server side prototype pollution can be found in the `name` param
-    // You can create a fake `status` variable and return a tempered response
     let rawQuery = '';
     for (const queryKey of Object.keys(query)) {
       if (query[queryKey].includes('proto')) {
@@ -79,11 +75,9 @@ export class EmailController {
         rawQuery += encodeURI(`&${queryKey}=${query[queryKey]}`);
       }
     }
-    // Remove the inital '&'
     rawQuery = `?${rawQuery.substring(1)}`;
     this.logger.debug(`Raw query ${rawQuery}`);
 
-    // "Use" the status code
     const uriParams = splitUriIntoParamsPPVulnerable(rawQuery);
     if (uriParams?.status) {
       responseJson.status = uriParams.status as HttpStatus;
@@ -118,11 +112,17 @@ export class EmailController {
     example: 'true',
     required: true
   })
-  async getEmails(@Query('withSource') withSourceStr: string) {
+  async getEmails(@Query('withSource') withSourceStr: string, @Query('userId') userId: string) {
     const withSource = withSourceStr === 'true';
 
     this.logger.log(`Getting Emails (withSource=${withSource})`);
-    return await this.emailService.getEmails(withSource);
+
+    if (!userId) {
+      this.logger.warn('Unauthorized access attempt detected: Missing userId');
+      throw new Error('Unauthorized access');
+    }
+
+    return await this.emailService.getEmails(withSource, userId);
   }
 
   @Delete('/deleteEmails')

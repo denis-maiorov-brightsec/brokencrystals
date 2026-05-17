@@ -5,7 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  Query
+  Query,
+  UseGuards
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -19,6 +20,7 @@ import {
   API_DESC_SEARCH_PARTNERS_NAMES
 } from './partners.controller.swagger.desc';
 import { PartnersService } from './partners.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('/api/partners')
 @ApiTags('Partners controller')
@@ -42,6 +44,7 @@ export class PartnersController {
   @ApiOkResponse({
     type: String
   })
+  @UseGuards(AuthGuard)
   async queryPartnersRaw(@Query('xpath') xpath: string): Promise<string> {
     this.logger.debug(`Getting partners with xpath expression "${xpath}"`);
 
@@ -76,6 +79,7 @@ export class PartnersController {
   @ApiOkResponse({
     type: String
   })
+  @UseGuards(AuthGuard)
   async partnerLogin(
     @Query('username') username: string,
     @Query('password') password: string
@@ -124,6 +128,7 @@ export class PartnersController {
   @ApiOkResponse({
     type: String
   })
+  @UseGuards(AuthGuard)
   async searchPartners(@Query('keyword') keyword: string): Promise<string> {
     this.logger.debug(`Searching partner names by the keyword "${keyword}"`);
 

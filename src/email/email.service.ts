@@ -66,7 +66,6 @@ export class EmailService {
     let parsedCc: string | RegExpExecArray | null = null;
     let parsedBcc: string | RegExpExecArray | null = null;
 
-    // This is intentional to support email injection
     if (
       to.toLowerCase().includes('%0a') ||
       to.toLowerCase().includes('%0d%0a')
@@ -91,7 +90,6 @@ export class EmailService {
       `parsedFrom: ${parsedFrom} | parsedTo: ${parsedTo} | parsedCc: ${parsedCc} | parsedBcc: ${parsedBcc}`
     );
 
-    // Build final raw email
     let rawContent = '';
     if (parsedSubject) {
       rawContent += `Subject: ${parsedSubject}\n`;
@@ -124,8 +122,13 @@ export class EmailService {
     return mailOptions;
   }
 
-  async getEmails(withSource): Promise<unknown> {
-    this.logger.debug(`Fetching all emails from MailCatcher`);
+  async getEmails(withSource, userId: string): Promise<unknown> {
+    this.logger.debug(`Fetching all emails for userId: ${userId}`);
+
+    if (!userId) {
+      this.logger.warn('Unauthorized access attempt detected: Missing userId');
+      throw new Error('Unauthorized access');
+    }
 
     const emails = await axios
       .get(this.MAIL_CATCHER_MESSAGES_URL)

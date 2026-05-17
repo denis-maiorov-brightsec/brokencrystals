@@ -56,12 +56,12 @@ export class TestimonialsService {
 
   async count(query: string): Promise<number> {
     try {
-      this.logger.debug(`Saved new testimonial`);
-
-      return (await this.em.getConnection().execute(query))[0].count as number;
+      this.logger.debug(`Executing count query.`);
+      const result = await this.em.getConnection().execute(query);
+      return result[0]?.count || 0;
     } catch (err) {
       this.logger.warn(`Failed to execute query. Error: ${err.message}`);
-      return err.message;
+      throw new Error('Database query execution failed.');
     }
   }
 }
