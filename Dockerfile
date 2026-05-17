@@ -34,6 +34,7 @@ COPY --chown=node:node client/index.html ./client/index.html
 ENV CYPRESS_INSTALL_BINARY=0
 RUN npm ci --prefix=client --no-audit
 RUN npm run build --prefix=client
+RUN test -f client/dist/index.html
 RUN npm prune --production
 
 USER node
