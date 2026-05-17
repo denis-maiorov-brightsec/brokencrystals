@@ -19,7 +19,7 @@ COPY --chown=node:node src ./src
 ENV NPM_CONFIG_LOGLEVEL=error
 RUN npm ci --no-audit
 RUN npm run build:fast
-RUN npm prune --production
+RUN npm prune --omit=dev
 
 # Copy and build client project
 COPY --chown=node:node client/package*.json ./client/
