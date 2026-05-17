@@ -17,7 +17,7 @@ COPY --chown=node:node keycloak ./keycloak
 COPY --chown=node:node src ./src
 
 ENV NPM_CONFIG_LOGLEVEL=error
-RUN npm ci --no-audit
+RUN for i in 1 2 3 4 5; do npm ci --no-audit && break || (echo "npm install failed, retrying in 5s..." && sleep 5); done
 RUN npm run build:fast
 RUN npm prune --production
 
