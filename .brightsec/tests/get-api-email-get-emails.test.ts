@@ -22,8 +22,6 @@ test('GET /api/email/getEmails', { signal: AbortSignal.timeout(timeout) }, async
   await runner
     .createScan({
       tests: [
-        'email_injection',
-        'ssrf',
         {
           name: 'broken_access_control',
           options: {

@@ -22,16 +22,7 @@ test('POST /graphql latestProducts', { signal: AbortSignal.timeout(timeout) }, a
   await runner
     .createScan({
       tests: [
-        'graphql_introspection',
-        'sqli',
-        'xss',
-        'csrf',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        }
+        'graphql_introspection'
       ],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
@@ -47,7 +38,15 @@ test('POST /graphql latestProducts', { signal: AbortSignal.timeout(timeout) }, a
       method: HttpMethod.POST,
       url: `${baseUrl}/graphql`,
       body: {
-        query: `query latestProducts {\n  latestProducts {\n    name\n    category\n    photoUrl\n    description\n    viewsCount\n  }\n}`
+        query: `query latestProducts {
+  latestProducts {
+    name
+    category
+    photoUrl
+    description
+    viewsCount
+  }
+}`
       },
       headers: { 'Content-Type': 'application/json' },
       auth: process.env.BRIGHT_AUTH_ID

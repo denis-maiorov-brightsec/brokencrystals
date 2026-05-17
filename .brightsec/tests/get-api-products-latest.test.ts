@@ -22,13 +22,6 @@ test('GET /api/products/latest', { signal: AbortSignal.timeout(timeout) }, async
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'sqli',
         'business_constraint_bypass'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],

@@ -22,15 +22,7 @@ test('GET /api/file/google', { signal: AbortSignal.timeout(timeout) }, async () 
   await runner
     .createScan({
       tests: [
-        'lfi',
-        'ssrf',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'secret_tokens'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

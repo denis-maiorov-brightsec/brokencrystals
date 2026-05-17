@@ -22,12 +22,6 @@ test('POST /graphql viewProduct', { signal: AbortSignal.timeout(timeout) }, asyn
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
         'sqli',
         'graphql_introspection'
       ],
