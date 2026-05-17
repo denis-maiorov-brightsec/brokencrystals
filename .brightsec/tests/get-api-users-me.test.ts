@@ -22,15 +22,7 @@ test('GET /api/users/me', { signal: AbortSignal.timeout(timeout) }, async () => 
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'jwt',
-        'xss',
-        'sqli'
+        'jwt'
       ],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {

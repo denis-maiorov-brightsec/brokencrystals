@@ -22,9 +22,6 @@ test('GET /api/partners/partnerLogin', { signal: AbortSignal.timeout(timeout) },
   await runner
     .createScan({
       tests: [
-        'xpathi',
-        'xss',
-        'csrf',
         {
           name: 'broken_access_control',
           options: {

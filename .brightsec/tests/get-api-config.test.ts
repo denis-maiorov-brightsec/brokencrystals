@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/config', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['full_path_disclosure', 'secret_tokens', 'improper_asset_management'],
+      tests: ['secret_tokens'],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

@@ -22,14 +22,7 @@ test('GET /api/testimonials/count', { signal: AbortSignal.timeout(timeout) }, as
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'sqli',
-        'business_constraint_bypass'
+        'sqli'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

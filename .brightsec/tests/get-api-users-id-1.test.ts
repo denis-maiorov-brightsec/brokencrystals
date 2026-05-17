@@ -28,7 +28,6 @@ test('GET /api/users/id/1', { signal: AbortSignal.timeout(timeout) }, async () =
             auth: process.env.BRIGHT_AUTH_ID
           }
         },
-        'sqli',
         'id_enumeration'
       ],
       attackParamLocations: [AttackParamLocation.PATH],

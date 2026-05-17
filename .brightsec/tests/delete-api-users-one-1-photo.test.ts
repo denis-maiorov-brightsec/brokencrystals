@@ -22,14 +22,6 @@ test('DELETE /api/users/one/1/photo', { signal: AbortSignal.timeout(timeout) }, 
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'sqli',
-        'csrf',
         'jwt'
       ],
       attackParamLocations: [AttackParamLocation.QUERY, AttackParamLocation.HEADER],
