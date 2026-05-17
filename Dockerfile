@@ -19,7 +19,7 @@ COPY --chown=node:node src ./src
 ENV NPM_CONFIG_LOGLEVEL=error
 RUN npm ci --no-audit
 RUN npm run build:fast
-RUN npm prune --production
+# RUN npm prune --production
 
 # Copy and build client project
 COPY --chown=node:node client/package*.json ./client/
@@ -34,6 +34,7 @@ COPY --chown=node:node client/index.html ./client/index.html
 ENV CYPRESS_INSTALL_BINARY=0
 RUN npm ci --prefix=client --no-audit
 RUN npm run build --prefix=client
+RUN npm prune --production
 
 USER node
 
