@@ -68,7 +68,8 @@ services:
     healthcheck:
       interval: 5s
       retries: 10
-      test: ['CMD', 'wget', '--spider', '-q', 'http://nodejs:3000/api/secrets']
+      start_period: 30s
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:3000/api/secrets']
       timeout: 30s
     environment:
       URL: http://localhost:3000
