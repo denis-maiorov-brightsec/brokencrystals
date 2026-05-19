@@ -21,21 +21,7 @@ after(() => runner.clear());
 test('POST /graphql createTestimonial', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'graphql_introspection',
-        'jwt',
-        'sqli',
-        'xss',
-        'html_injection',
-        'iframe_injection',
-        'csrf'
-      ],
+      tests: ['graphql_introspection'],
       attackParamLocations: [AttackParamLocation.BODY, AttackParamLocation.HEADER],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

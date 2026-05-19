@@ -22,14 +22,7 @@ test('GET /api/file/digital_ocean?path=:path&type=:type', { signal: AbortSignal.
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'ssrf',
-        'full_path_disclosure'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

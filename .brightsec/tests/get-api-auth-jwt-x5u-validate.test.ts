@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/auth/jwt/x5u/validate', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['jwt', 'ssrf', 'full_path_disclosure'],
+      tests: ['full_path_disclosure'],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

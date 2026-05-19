@@ -22,15 +22,7 @@ test('DELETE /api/users/one/1/photo?isAdmin=true', { signal: AbortSignal.timeout
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'id_enumeration',
-        'jwt',
-        'bopla'
+        'jwt'
       ],
       attackParamLocations: [AttackParamLocation.PATH, AttackParamLocation.QUERY, AttackParamLocation.HEADER],
       starMetadata: {

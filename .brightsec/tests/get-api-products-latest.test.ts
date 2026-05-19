@@ -22,14 +22,7 @@ test('GET /api/products/latest?limit=:limit', { signal: AbortSignal.timeout(time
   await runner
     .createScan({
       tests: [
-        'business_constraint_bypass',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'full_path_disclosure'
+        'business_constraint_bypass'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

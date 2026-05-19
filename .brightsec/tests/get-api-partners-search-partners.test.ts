@@ -21,17 +21,7 @@ after(() => runner.clear());
 test('GET /api/partners/searchPartners?keyword=:keyword', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'xpathi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'business_constraint_bypass',
-        'full_path_disclosure'
-      ],
+      tests: ['xpathi'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

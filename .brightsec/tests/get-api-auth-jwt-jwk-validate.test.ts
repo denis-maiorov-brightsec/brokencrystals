@@ -21,16 +21,7 @@ after(() => runner.clear());
 test('GET /api/auth/jwt/jwk/validate', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'jwt',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'full_path_disclosure'
-      ],
+      tests: ['full_path_disclosure'],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

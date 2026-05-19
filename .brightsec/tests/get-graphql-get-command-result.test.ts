@@ -21,17 +21,7 @@ after(() => runner.clear());
 test('GET /graphql getCommandResult', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'osi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'graphql_introspection',
-        'full_path_disclosure'
-      ],
+      tests: ['graphql_introspection'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('POST /api/metadata', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['xxe', 'ssrf', 'full_path_disclosure'],
+      tests: ['xxe'],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

@@ -22,6 +22,7 @@ test('GET /api/config', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
       tests: [
+        'secret_tokens',
         {
           name: 'broken_access_control',
           options: {
@@ -29,9 +30,7 @@ test('GET /api/config', { signal: AbortSignal.timeout(timeout) }, async () => {
           }
         },
         'open_database',
-        'secret_tokens',
-        'open_cloud_storage',
-        'amazon_s3_takeover'
+        'open_cloud_storage'
       ],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {

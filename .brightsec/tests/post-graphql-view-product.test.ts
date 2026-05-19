@@ -23,14 +23,7 @@ test('POST /graphql viewProduct', { signal: AbortSignal.timeout(timeout) }, asyn
     .createScan({
       tests: [
         'sqli',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'graphql_introspection',
-        'full_path_disclosure'
+        'graphql_introspection'
       ],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {

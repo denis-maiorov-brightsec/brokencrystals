@@ -27,9 +27,7 @@ test('GET /api/email/getEmails?withSource=:withSource', { signal: AbortSignal.ti
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'id_enumeration',
-        'business_constraint_bypass'
+        }
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

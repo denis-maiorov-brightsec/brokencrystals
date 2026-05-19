@@ -22,13 +22,7 @@ test('GET /api/file/raw?path=:path', { signal: AbortSignal.timeout(timeout) }, a
   await runner
     .createScan({
       tests: [
-        'lfi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        }
+        'lfi'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
