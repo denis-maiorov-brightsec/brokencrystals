@@ -5,7 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  Query
+  Query,
+  UseGuards
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -19,16 +20,38 @@ import {
   API_DESC_SEARCH_PARTNERS_NAMES
 } from './partners.controller.swagger.desc';
 import { PartnersService } from './partners.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { JwtProcessorType } from '../auth/auth.service';
+import { JwtType } from '../auth/jwt/jwt.type.decorator';
 
 @Controller('/api/partners')
 @ApiTags('Partners controller')
 export class PartnersController {
   private readonly logger = new Logger(PartnersController.name);
+  private readonly PARTNER_CREDENTIAL_REGEX = /^[A-Za-z0-9_!.-]{1,64}$/;
 
   constructor(private readonly partnersService: PartnersService) {}
 
+  private isValidPartnerCredentialInput(value: string): boolean {
+    return !!value && this.PARTNER_CREDENTIAL_REGEX.test(value);
+  }
+
+  private toXPathStringLiteral(value: string): string {
+    if (!value.includes("'")) {
+      return `'${value}'`;
+    }
+
+    if (!value.includes('"')) {
+      return `"${value}"`;
+    }
+
+    return `concat('${value.split("'").join(`', "'", '`)}')`;
+  }
+
   // **** This is a general XPATH injection EP - Will accept anything ****
   @Get('query')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiQuery({
     name: 'xpath',
     type: 'string',
@@ -84,13 +107,28 @@ export class PartnersController {
       `Trying to login partner with username ${username} using password ${password}`
     );
 
+    if (
+      !this.isValidPartnerCredentialInput(username) ||
+      !this.isValidPartnerCredentialInput(password)
+    ) {
+      throw new HttpException(
+        `Access denied to partner's account. Invalid credentials format`,
+        HttpStatus.FORBIDDEN
+      );
+    }
+
     try {
       const xpath = `//partners/partner[username/text()='${username}' and password/text()='${password}']/*`;
       const xmlStr = this.partnersService.getPartnersProperties(xpath);
 
       // Check if account's data contains any information - If not, the login failed!
       if (
-        !(xmlStr && xmlStr.includes('password') && xmlStr.includes('wealth'))
+        !(
+          xmlStr &&
+          xmlStr.includes(`<username>${username}</username>`) &&
+          xmlStr.includes(`<password>${password}</password>`) &&
+          xmlStr.includes('wealth')
+        )
       ) {
         throw new Error('Login attempt failed!');
       }
@@ -127,8 +165,17 @@ export class PartnersController {
   async searchPartners(@Query('keyword') keyword: string): Promise<string> {
     this.logger.debug(`Searching partner names by the keyword "${keyword}"`);
 
+    const normalizedKeyword = (keyword || '').trim();
+    if (!normalizedKeyword || normalizedKeyword.length > 64) {
+      throw new HttpException(
+        `Couldn't find partners. Invalid search keyword format`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     try {
-      const xpath = `//partners/partner/name[contains(., '${keyword}')]`;
+      const xpathKeyword = this.toXPathStringLiteral(normalizedKeyword);
+      const xpath = `//partners/partner/name[contains(., ${xpathKeyword})]`;
       return this.partnersService.getPartnersProperties(xpath);
     } catch (err) {
       const errStr = err.toString();

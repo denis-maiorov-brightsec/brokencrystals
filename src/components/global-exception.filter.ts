@@ -13,11 +13,24 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     const gql = host.getType<GqlContextType>() === 'graphql';
 
     if (exception instanceof HttpException) {
+      const sanitizedException = new HttpException(
+        this.sanitizeHttpResponse(exception.getResponse()),
+        exception.getStatus()
+      );
+
       if (gql) {
-        throw exception;
+        throw sanitizedException;
       }
 
-      return super.catch(exception, host);
+      const applicationRef =
+        this.applicationRef ||
+        (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
+
+      return applicationRef.reply(
+        host.getArgByIndex(1),
+        sanitizedException.getResponse(),
+        sanitizedException.getStatus()
+      );
     }
 
     const unprocessableException = new InternalServerErrorException(
@@ -38,5 +51,21 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       unprocessableException.getResponse(),
       unprocessableException.getStatus()
     );
+  }
+
+  private sanitizeHttpResponse(response: string | object): object {
+    if (typeof response === 'string') {
+      return { error: response };
+    }
+
+    const sanitizedResponse = { ...(response as Record<string, unknown>) };
+
+    delete sanitizedResponse.line;
+    delete sanitizedResponse.path;
+    delete sanitizedResponse.location;
+    delete sanitizedResponse.stack;
+    delete sanitizedResponse.trace;
+
+    return sanitizedResponse;
   }
 }

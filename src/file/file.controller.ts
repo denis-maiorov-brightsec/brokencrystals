@@ -49,12 +49,51 @@ export class FileController {
     }
   }
 
-  private async loadCPFile(cpBaseUrl: string, path: string) {
-    if (!path.startsWith(cpBaseUrl)) {
-      throw new BadRequestException(`Invalid paramater 'path' ${path}`);
+  private isValidCloudProviderPath(cpBaseUrl: string, requestedPath: string): boolean {
+    try {
+      if (!requestedPath || typeof requestedPath !== 'string') {
+        return false;
+      }
+
+      const trimmedPath = requestedPath.trim();
+
+      if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmedPath)) {
+        return false;
+      }
+
+      const normalizedBaseUrl = cpBaseUrl.endsWith('/')
+        ? cpBaseUrl
+        : `${cpBaseUrl}/`;
+
+      const base = new URL(normalizedBaseUrl);
+      const target = new URL(trimmedPath, base);
+
+      return (
+        target.protocol === base.protocol &&
+        target.hostname === base.hostname &&
+        target.port === base.port &&
+        !target.username &&
+        !target.password &&
+        !target.hash &&
+        !target.search &&
+        target.pathname.startsWith(base.pathname)
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private async loadCPFile(cpBaseUrl: string, requestedPath: string) {
+    if (!this.isValidCloudProviderPath(cpBaseUrl, requestedPath)) {
+      throw new BadRequestException(`Invalid paramater 'path' ${requestedPath}`);
     }
 
-    const file: Stream = await this.fileService.getFile(path);
+    const normalizedBaseUrl = cpBaseUrl.endsWith('/')
+      ? cpBaseUrl
+      : `${cpBaseUrl}/`;
+    const targetUrl = new URL(requestedPath.trim(), normalizedBaseUrl);
+
+    const file: Stream = await this.fileService.getFile(targetUrl.toString());
 
     return file;
   }

@@ -224,9 +224,20 @@ export class AuthController {
   }
 
   @Get('oidc-client')
+  @UseGuards(AuthGuard)
   @ApiResponse({
     type: OidcClientResponse,
     status: HttpStatus.OK
+  })
+  @ApiUnauthorizedResponse({
+    description: 'invalid credentials',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'string' },
+        location: { type: 'string' }
+      }
+    }
   })
   @ApiOperation({
     description: SWAGGER_DESC_CALL_OIDC_CLIENT

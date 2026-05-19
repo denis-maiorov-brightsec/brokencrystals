@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  InternalServerErrorException
+} from '@nestjs/common';
 import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -41,8 +46,19 @@ export class FileService {
       throw new Error('cannot delete file from this location');
     } else {
       file = path.resolve(process.cwd(), file);
-      await fs.promises.unlink(file);
-      return true;
+
+      try {
+        await fs.promises.unlink(file);
+        return true;
+      } catch (err) {
+        this.logger.error(err.message);
+
+        if (err.code === 'ENOENT') {
+          throw new NotFoundException('file not found');
+        }
+
+        throw new InternalServerErrorException('failed to delete file');
+      }
     }
   }
 }

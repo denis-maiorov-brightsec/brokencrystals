@@ -38,6 +38,7 @@ import { McpModule } from './mcp/mcp.module';
     GraphQLModule.forRoot<MercuriusDriverConfig>({
       driver: MercuriusDriver,
       graphiql: true,
+      introspection: false,
       autoSchemaFile: true
     }),
     PartnersModule,

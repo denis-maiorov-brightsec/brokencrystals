@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as dotT from 'dot';
 import { TestimonialsService } from '../testimonials/testimonials.service';
 import { AppService } from '../app.service';
 import {
@@ -201,26 +200,40 @@ export class McpService {
     }
   }
 
-  // SSTI vulnerability - uses dot template engine with user input
+  // Safe rendering - supports only explicit placeholders and avoids template code execution
   private executeRenderTool(input: RenderToolInput): McpToolResult {
     try {
       this.logger.debug(
         `Rendering sum for numbers: ${JSON.stringify(input.numbers)}`
       );
 
-      // Calculate sum
       const numbers = input.numbers || [];
       const sum = numbers.reduce((acc, num) => acc + num, 0);
 
-      // Vulnerable: SSTI - User-controlled template string is directly compiled
-      // Default template if not provided
       const template =
         input.template ||
         `The sum of [{{=it.numbers.join(', ')}}] is: {{=it.sum}}`;
 
-      // Vulnerable: Using dot template engine which allows code execution
-      // User can inject arbitrary code via the template parameter
-      const rendered = dotT.compile(template)({ numbers, sum });
+      // Allowlist placeholders only; reject any other template expression syntax
+      const unsupportedTemplateExpression =
+        /\{\{(?!\s*=it\.sum\s*\}\}|\s*=it\.numbers\s*\}\}|\s*=it\.numbers\.join\(', '\)\s*\}\})/;
+
+      if (unsupportedTemplateExpression.test(template)) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Invalid template: only {{=it.sum}}, {{=it.numbers}}, and {{=it.numbers.join(\', \')}} are allowed'
+            }
+          ],
+          isError: true
+        };
+      }
+
+      const rendered = template
+        .replace(/\{\{\s*=it\.numbers\.join\(', '\)\s*\}\}/g, numbers.join(', '))
+        .replace(/\{\{\s*=it\.numbers\s*\}\}/g, JSON.stringify(numbers))
+        .replace(/\{\{\s*=it\.sum\s*\}\}/g, String(sum));
 
       this.logger.debug(`Rendered result: ${rendered}`);
 

@@ -56,6 +56,7 @@ import { SWAGGER_DESC_FIND_USER } from './users/users.controller.swagger.desc';
 @ApiTags('App controller')
 export class AppController {
   private readonly logger = new Logger(AppController.name);
+  private readonly redirectAllowlist = new Set(['google.com', 'www.google.com']);
 
   constructor(private readonly appService: AppService) {}
 
@@ -72,10 +73,20 @@ export class AppController {
   async renderTemplate(@Body() raw): Promise<string> {
     if (typeof raw === 'string' || Buffer.isBuffer(raw)) {
       const text = raw.toString().trim();
-      const res = dotT.compile(text)();
+
+      if (/{{|}}/.test(text)) {
+        throw new HttpException(
+          'Template expressions are not allowed',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      const res = dotT.template('{{=it.text}}')({ text });
       this.logger.debug(`Rendered template: ${res}`);
       return res;
     }
+
+    throw new HttpException('Invalid request body', HttpStatus.BAD_REQUEST);
   }
 
   @Get('goto')
@@ -88,7 +99,35 @@ export class AppController {
   })
   @Redirect()
   async redirect(@Query('url') url: string) {
-    return { url };
+    const targetUrl = (url || '').trim();
+
+    if (!targetUrl) {
+      throw new HttpException('Redirect url is required', HttpStatus.BAD_REQUEST);
+    }
+
+    if (targetUrl.startsWith('/') && !targetUrl.startsWith('//')) {
+      return { url: targetUrl };
+    }
+
+    try {
+      const parsedUrl = new URL(targetUrl);
+      const isHttpProtocol =
+        parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+      const isAllowedHost = this.redirectAllowlist.has(
+        parsedUrl.hostname.toLowerCase()
+      );
+
+      if (isHttpProtocol && isAllowedHost) {
+        return { url: parsedUrl.toString() };
+      }
+    } catch (err) {
+      this.logger.debug(`Invalid redirect URL provided: ${targetUrl}`);
+    }
+
+    throw new HttpException(
+      'Redirect url is not allowed',
+      HttpStatus.BAD_REQUEST
+    );
   }
 
   @Post('metadata')
@@ -169,6 +208,8 @@ export class AppController {
   }
 
   @Get('/config')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiOperation({
     description: API_DESC_CONFIG_SERVER
   })

@@ -626,12 +626,31 @@ export class UsersController {
   }
 
   public originEmail(request: FastifyRequest): string {
-    return JSON.parse(
-      Buffer.from(
-        request.headers.authorization.split('.')[1],
-        'base64'
-      ).toString()
-    ).user;
+    const authorization = request.headers.authorization;
+    if (!authorization) {
+      throw new UnauthorizedException('Missing authorization token');
+    }
+
+    const token = authorization.toLowerCase().startsWith('bearer ')
+      ? authorization.slice('bearer '.length).trim()
+      : authorization;
+    const parts = token.split('.');
+
+    if (parts.length !== 3 || !parts[0] || !parts[1]) {
+      throw new UnauthorizedException('Invalid authorization token');
+    }
+
+    const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+    if (!header?.alg || header.alg.toLowerCase() === 'none') {
+      throw new UnauthorizedException('Unsupported jwt token algorithm');
+    }
+
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    if (!payload?.user) {
+      throw new UnauthorizedException('Invalid authorization token payload');
+    }
+
+    return payload.user;
   }
 
   private async doesUserExist(user: UserDto): Promise<boolean> {

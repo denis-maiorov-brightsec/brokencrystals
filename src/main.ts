@@ -97,6 +97,17 @@ async function bootstrap() {
         : null
   });
 
+  server.addHook('onRequest', (req, res, done) => {
+    const requestUrl = req.raw.url?.toLowerCase() || '';
+
+    if (requestUrl === '/.git' || requestUrl.startsWith('/.git/')) {
+      res.status(404).send('Not Found');
+      return;
+    }
+
+    done();
+  });
+
   server.setDefaultRoute((req, res) => {
     if (req.url && req.url.startsWith('/api')) {
       res.statusCode = 404;
@@ -137,6 +148,14 @@ async function bootstrap() {
   });
 
   for (const dir of readdirSync(join(__dirname, '..', 'client', 'vcs'))) {
+    if (
+      dir.toLowerCase() === 'svn' ||
+      dir.toLowerCase() === 'hg' ||
+      dir.toLowerCase() === 'git'
+    ) {
+      continue;
+    }
+
     await server.register(fastifyStatic, {
       root: join(__dirname, '..', 'client', 'vcs', dir),
       prefix: `/.${dir}`,

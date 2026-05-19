@@ -62,14 +62,14 @@ export class AppService {
         OrmModuleConfigProperties.ENV_DATABASE_PASSWORD
       );
 
+    if (dbSchema || dbHost || dbPort || dbUser || dbPwd) {
+      this.logger.debug('Database configuration is set');
+    }
+
     return {
-      awsBucket: this.configService.get<string>(
-        AppModuleConfigProperties.ENV_AWS_BUCKET
-      ),
-      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema} `,
-      googlemaps: this.configService.get<string>(
-        AppModuleConfigProperties.ENV_GOOGLE_MAPS
-      )
+      awsBucket: '[REDACTED]',
+      sql: '[REDACTED]',
+      googlemaps: '[REDACTED]'
     };
   }
 
