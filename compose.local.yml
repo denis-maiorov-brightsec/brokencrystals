@@ -75,6 +75,18 @@ services:
     ports:
       - '3000:3000'
       - '5000:5000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://127.0.0.1:3000/',res=>process.exit(res.statusCode>=200&&res.statusCode<400?0:1)).on('error',()=>process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
     logging:
       options:
         max-file: '5'
