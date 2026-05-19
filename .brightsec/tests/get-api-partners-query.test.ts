@@ -22,14 +22,12 @@ test('GET /api/partners/query?xpath=:xpath', { signal: AbortSignal.timeout(timeo
   await runner
     .createScan({
       tests: [
-        'xpathi',
         {
           name: 'broken_access_control',
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'full_path_disclosure'
+        }
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

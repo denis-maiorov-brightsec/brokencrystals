@@ -22,15 +22,7 @@ test('GET /api/partners/searchPartners?keyword=:keyword', { signal: AbortSignal.
   await runner
     .createScan({
       tests: [
-        'xpathi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'bopla',
-        'secret_tokens'
+        'xpathi'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

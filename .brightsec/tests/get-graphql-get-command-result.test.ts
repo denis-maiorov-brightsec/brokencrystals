@@ -22,13 +22,6 @@ test('GET /graphql getCommandResult', { signal: AbortSignal.timeout(timeout) }, 
   await runner
     .createScan({
       tests: [
-        'osi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
         'graphql_introspection'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],

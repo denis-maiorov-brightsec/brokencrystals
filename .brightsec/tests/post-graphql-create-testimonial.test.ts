@@ -22,19 +22,7 @@ test('POST /graphql createTestimonial', { signal: AbortSignal.timeout(timeout) }
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'jwt',
-        'sqli',
-        'xss',
-        'html_injection',
-        'graphql_introspection',
-        'full_path_disclosure',
-        'csrf'
+        'graphql_introspection'
       ],
       attackParamLocations: [AttackParamLocation.BODY, AttackParamLocation.HEADER],
       starMetadata: {

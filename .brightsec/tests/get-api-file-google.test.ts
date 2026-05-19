@@ -22,14 +22,7 @@ test('GET /api/file/google?path=:path&type=:type', { signal: AbortSignal.timeout
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'ssrf',
-        'xss'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

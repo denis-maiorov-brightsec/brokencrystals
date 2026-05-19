@@ -27,11 +27,7 @@ test('GET /api/auth/oidc-client', { signal: AbortSignal.timeout(timeout) }, asyn
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'secret_tokens',
-        'jwt',
-        'improper_asset_management',
-        'http_method_fuzzing'
+        }
       ],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {

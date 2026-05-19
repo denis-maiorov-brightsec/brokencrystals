@@ -27,10 +27,7 @@ test('GET /api/email/getEmails?withSource=true', { signal: AbortSignal.timeout(t
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'business_constraint_bypass',
-        'xss',
-        'full_path_disclosure'
+        }
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

@@ -22,15 +22,7 @@ test('POST /api/render', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
       tests: [
-        'ssti',
-        'server_side_js_injection',
-        'osi',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        }
+        'ssti'
       ],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {

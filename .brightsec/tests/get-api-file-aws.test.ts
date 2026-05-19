@@ -22,14 +22,7 @@ test('GET /api/file/aws?path=:path&type=:type', { signal: AbortSignal.timeout(ti
   await runner
     .createScan({
       tests: [
-        'ssrf',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'xss'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

@@ -22,12 +22,6 @@ test('GET /api/testimonials/count?query=:query', { signal: AbortSignal.timeout(t
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
         'sqli'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],

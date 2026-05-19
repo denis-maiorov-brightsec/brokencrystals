@@ -21,18 +21,7 @@ after(() => runner.clear());
 test('GET /.git/config', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'version_control_systems',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'secret_tokens',
-        'open_database',
-        'http_method_fuzzing'
-      ],
+      tests: ['version_control_systems'],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

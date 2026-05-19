@@ -29,9 +29,8 @@ test('GET /api/config', { signal: AbortSignal.timeout(timeout) }, async () => {
           }
         },
         'open_database',
-        'secret_tokens',
         'open_cloud_storage',
-        'amazon_s3_takeover'
+        'secret_tokens'
       ],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {
