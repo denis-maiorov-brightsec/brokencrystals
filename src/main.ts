@@ -97,6 +97,31 @@ async function bootstrap() {
         : null
   });
 
+  server.addHook('onRequest', (req, res, done) => {
+    const requestPath = req.url.split('?')[0].toLowerCase();
+    if (
+      requestPath === '/.svn' ||
+      requestPath.startsWith('/.svn/') ||
+      requestPath.includes('/.svn/') ||
+      requestPath === '/.hg' ||
+      requestPath.startsWith('/.hg/') ||
+      requestPath.includes('/.hg/') ||
+      requestPath === '/.git' ||
+      requestPath.startsWith('/.git/') ||
+      requestPath.includes('/.git/')
+    ) {
+      res.code(404).send({
+        success: false,
+        error: {
+          kind: 'user_input',
+          message: 'Not Found'
+        }
+      });
+      return;
+    }
+    done();
+  });
+
   server.setDefaultRoute((req, res) => {
     if (req.url && req.url.startsWith('/api')) {
       res.statusCode = 404;

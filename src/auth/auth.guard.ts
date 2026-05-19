@@ -36,8 +36,7 @@ export class AuthGuard implements CanActivate {
     } catch (err) {
       this.logger.debug(`Failed to validate token: ${err.message}`);
       throw new UnauthorizedException({
-        error: 'Unauthorized',
-        line: __filename
+        error: 'Unauthorized'
       });
     }
   }
@@ -66,18 +65,33 @@ export class AuthGuard implements CanActivate {
     token: string,
     context: ExecutionContext
   ): Promise<boolean> {
+    this.validateTokenAlgorithm(token);
+
     const processorType = this.reflector.get<JwtProcessorType>(
       JwTypeMetadataField,
       context.getHandler()
     );
 
-    try {
-      return !!(await this.authService.validateToken(token, processorType));
-    } catch {
-      return !!(await this.authService.validateToken(
-        token,
-        JwtProcessorType.BEARER
-      ));
+    const effectiveProcessorType =
+      processorType === undefined ? JwtProcessorType.BEARER : processorType;
+
+    return !!(await this.authService.validateToken(token, effectiveProcessorType));
+  }
+
+  private validateTokenAlgorithm(token: string): void {
+    const tokenParts = token.split('.');
+
+    if (tokenParts.length !== 3 || !tokenParts[0]) {
+      throw new Error('Invalid JWT token format');
+    }
+
+    const normalizedHeader = tokenParts[0].replace(/-/g, '+').replace(/_/g, '/');
+    const header = JSON.parse(
+      Buffer.from(normalizedHeader, 'base64').toString('utf8')
+    );
+
+    if (!header?.alg || header.alg.toLowerCase() === 'none') {
+      throw new Error('Invalid JWT signing algorithm');
     }
   }
 

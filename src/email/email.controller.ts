@@ -7,9 +7,11 @@ import {
   HttpStatus,
   Logger,
   Query,
-  Res
+  Res,
+  UseGuards
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '../auth/auth.guard';
 import { EmailService } from './email.service';
 import {
   SWAGGER_DESC_DELTE_EMAILS,
@@ -110,6 +112,7 @@ export class EmailController {
   }
 
   @Get('/getEmails')
+  @UseGuards(AuthGuard)
   @ApiOperation({
     description: SWAGGER_DESC_GET_EMAILS
   })
@@ -126,6 +129,7 @@ export class EmailController {
   }
 
   @Delete('/deleteEmails')
+  @UseGuards(AuthGuard)
   @ApiOperation({
     description: SWAGGER_DESC_DELTE_EMAILS
   })

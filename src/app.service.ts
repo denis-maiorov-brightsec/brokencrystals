@@ -55,18 +55,23 @@ export class AppService {
       dbPort = this.configService.get<string>(
         OrmModuleConfigProperties.ENV_DATABASE_PORT
       ),
-      dbUser = this.configService.get<string>(
-        OrmModuleConfigProperties.ENV_DATABASE_USER
-      ),
-      dbPwd = this.configService.get<string>(
-        OrmModuleConfigProperties.ENV_DATABASE_PASSWORD
+      configuredAwsBucket = this.configService.get<string>(
+        AppModuleConfigProperties.ENV_AWS_BUCKET
       );
 
+    const isPublicS3Url = /^https?:\/\/[\w.-]+\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com(?:\/|$)/i.test(
+      configuredAwsBucket || ''
+    );
+
+    if (isPublicS3Url) {
+      this.logger.warn(
+        'Public S3 bucket URL detected in application configuration. Omitting value from response.'
+      );
+    }
+
     return {
-      awsBucket: this.configService.get<string>(
-        AppModuleConfigProperties.ENV_AWS_BUCKET
-      ),
-      sql: `postgres://${dbUser}:${dbPwd}@${dbHost}:${dbPort}/${dbSchema} `,
+      awsBucket: isPublicS3Url ? '' : configuredAwsBucket,
+      sql: `postgres://${dbHost}:${dbPort}/${dbSchema}`,
       googlemaps: this.configService.get<string>(
         AppModuleConfigProperties.ENV_GOOGLE_MAPS
       )

@@ -5,7 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  Query
+  Query,
+  UseGuards
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -13,6 +14,9 @@ import {
   ApiQuery,
   ApiTags
 } from '@nestjs/swagger';
+import { AuthGuard } from '../auth/auth.guard';
+import { JwtProcessorType } from '../auth/auth.service';
+import { JwtType } from '../auth/jwt/jwt.type.decorator';
 import {
   API_DESC_QUERY_PARTNERS_RAW,
   API_DESC_PARTNERS_LOGIN,
@@ -27,8 +31,27 @@ export class PartnersController {
 
   constructor(private readonly partnersService: PartnersService) {}
 
+  private toXPathLiteral(value: string): string {
+    if (!value.includes("'")) {
+      return `'${value}'`;
+    }
+
+    if (!value.includes('"')) {
+      return `"${value}"`;
+    }
+
+    const parts = value.split("'");
+    const concatParts = parts
+      .map((part) => `'${part}'`)
+      .join(', "\'", ');
+
+    return `concat(${concatParts})`;
+  }
+
   // **** This is a general XPATH injection EP - Will accept anything ****
   @Get('query')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiQuery({
     name: 'xpath',
     type: 'string',
@@ -80,12 +103,12 @@ export class PartnersController {
     @Query('username') username: string,
     @Query('password') password: string
   ): Promise<string> {
-    this.logger.debug(
-      `Trying to login partner with username ${username} using password ${password}`
-    );
+    this.logger.debug(`Trying to login partner with username ${username}`);
 
     try {
-      const xpath = `//partners/partner[username/text()='${username}' and password/text()='${password}']/*`;
+      const usernameXPath = this.toXPathLiteral(username);
+      const passwordXPath = this.toXPathLiteral(password);
+      const xpath = `//partners/partner[username/text()=${usernameXPath} and password/text()=${passwordXPath}]/*`;
       const xmlStr = this.partnersService.getPartnersProperties(xpath);
 
       // Check if account's data contains any information - If not, the login failed!
@@ -128,7 +151,8 @@ export class PartnersController {
     this.logger.debug(`Searching partner names by the keyword "${keyword}"`);
 
     try {
-      const xpath = `//partners/partner/name[contains(., '${keyword}')]`;
+      const keywordXPath = this.toXPathLiteral(keyword);
+      const xpath = `//partners/partner/name[contains(., ${keywordXPath})]`;
       return this.partnersService.getPartnersProperties(xpath);
     } catch (err) {
       const errStr = err.toString();

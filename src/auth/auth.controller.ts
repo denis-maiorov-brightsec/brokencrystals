@@ -224,6 +224,8 @@ export class AuthController {
   }
 
   @Get('oidc-client')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiResponse({
     type: OidcClientResponse,
     status: HttpStatus.OK

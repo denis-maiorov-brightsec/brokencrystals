@@ -72,7 +72,7 @@ export class AppController {
   async renderTemplate(@Body() raw): Promise<string> {
     if (typeof raw === 'string' || Buffer.isBuffer(raw)) {
       const text = raw.toString().trim();
-      const res = dotT.compile(text)();
+      const res = dotT.compile('{{=it.text}}')({ text });
       this.logger.debug(`Rendered template: ${res}`);
       return res;
     }
@@ -88,7 +88,18 @@ export class AppController {
   })
   @Redirect()
   async redirect(@Query('url') url: string) {
-    return { url };
+    const normalizedUrl = typeof url === 'string' ? url.trim() : '';
+    const isSafeRelativePath =
+      normalizedUrl.startsWith('/') &&
+      !normalizedUrl.startsWith('//') &&
+      !normalizedUrl.includes('\r') &&
+      !normalizedUrl.includes('\n');
+
+    if (!isSafeRelativePath) {
+      throw new HttpException('Invalid redirect URL', HttpStatus.BAD_REQUEST);
+    }
+
+    return { url: normalizedUrl };
   }
 
   @Post('metadata')
@@ -114,9 +125,16 @@ export class AppController {
   })
   @Header('content-type', 'text/xml')
   async xml(@Body() xml: string): Promise<string> {
-    const xmlDoc = parseXml(decodeURIComponent(xml), {
-      noent: true,
-      dtdvalid: true,
+    const decodedXml = decodeURIComponent(xml);
+
+    if (/<!(DOCTYPE|ENTITY)\b/i.test(decodedXml)) {
+      throw new HttpException('Invalid XML content', HttpStatus.BAD_REQUEST);
+    }
+
+    const xmlDoc = parseXml(decodedXml, {
+      noent: false,
+      dtdvalid: false,
+      nonet: true,
       recover: true
     });
     this.logger.debug(xmlDoc);
@@ -169,6 +187,8 @@ export class AppController {
   }
 
   @Get('/config')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiOperation({
     description: API_DESC_CONFIG_SERVER
   })

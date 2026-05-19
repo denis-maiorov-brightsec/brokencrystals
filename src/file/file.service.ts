@@ -13,11 +13,7 @@ export class FileService {
   async getFile(file: string): Promise<Readable> {
     this.logger.log(`Reading file: ${file}`);
 
-    if (file.startsWith('/')) {
-      await fs.promises.access(file, R_OK);
-
-      return fs.createReadStream(file);
-    } else if (file.startsWith('http')) {
+    if (file.startsWith('http')) {
       const content = await this.cloudProviders.get(file);
 
       if (content) {
@@ -26,11 +22,25 @@ export class FileService {
         throw new Error(`no such file or directory, access '${file}'`);
       }
     } else {
-      file = path.resolve(process.cwd(), file);
+      const appRoot = path.resolve(process.cwd());
 
-      await fs.promises.access(file, R_OK);
+      if (path.isAbsolute(file)) {
+        throw new Error('cannot read file from this location');
+      }
 
-      return fs.createReadStream(file);
+      const resolvedFile = path.resolve(appRoot, file);
+      const relativeToRoot = path.relative(appRoot, resolvedFile);
+
+      if (
+        relativeToRoot.startsWith('..') ||
+        path.isAbsolute(relativeToRoot)
+      ) {
+        throw new Error('cannot read file from this location');
+      }
+
+      await fs.promises.access(resolvedFile, R_OK);
+
+      return fs.createReadStream(resolvedFile);
     }
   }
 
@@ -41,8 +51,14 @@ export class FileService {
       throw new Error('cannot delete file from this location');
     } else {
       file = path.resolve(process.cwd(), file);
-      await fs.promises.unlink(file);
-      return true;
+
+      try {
+        await fs.promises.unlink(file);
+        return true;
+      } catch (err) {
+        this.logger.error(err.message);
+        throw new Error('failed to delete file');
+      }
     }
   }
 }

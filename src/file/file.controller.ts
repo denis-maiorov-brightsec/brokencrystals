@@ -49,12 +49,100 @@ export class FileController {
     }
   }
 
+  private isAllowedCloudProviderPath(cpBaseUrl: string, requestedPath: string) {
+    try {
+      const baseUrl = new URL(cpBaseUrl);
+      const requestUrl = new URL(requestedPath);
+
+      if (
+        requestUrl.protocol !== baseUrl.protocol ||
+        requestUrl.hostname !== baseUrl.hostname ||
+        requestUrl.port !== baseUrl.port
+      ) {
+        return false;
+      }
+
+      if (requestUrl.username || requestUrl.password) {
+        return false;
+      }
+
+      if (requestUrl.search || requestUrl.hash) {
+        return false;
+      }
+
+      const lowerCasePathname = requestUrl.pathname.toLowerCase();
+      if (
+        lowerCasePathname.includes('%2f') ||
+        lowerCasePathname.includes('%5c') ||
+        lowerCasePathname.includes('%2e')
+      ) {
+        return false;
+      }
+
+      const normalizedBasePath = baseUrl.pathname.endsWith('/')
+        ? baseUrl.pathname.slice(0, -1)
+        : baseUrl.pathname;
+      const normalizedRequestPath = requestUrl.pathname.endsWith('/')
+        ? requestUrl.pathname.slice(0, -1)
+        : requestUrl.pathname;
+
+      return (
+        normalizedRequestPath === normalizedBasePath ||
+        normalizedRequestPath.startsWith(`${normalizedBasePath}/`)
+      );
+    } catch (err) {
+      return false;
+    }
+  }
+
+  private resolveCloudProviderPath(cpBaseUrl: string, requestedPath: string) {
+    const normalizedPath = (requestedPath || '').trim();
+
+    if (!normalizedPath) {
+      return cpBaseUrl;
+    }
+
+    if (
+      normalizedPath.startsWith('//') ||
+      /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(normalizedPath)
+    ) {
+      return null;
+    }
+
+    if (
+      normalizedPath.includes('?') ||
+      normalizedPath.includes('#') ||
+      normalizedPath.includes('\\')
+    ) {
+      return null;
+    }
+
+    const normalizedRelativePath = normalizedPath.replace(/^\/+/, '');
+
+    if (
+      !normalizedRelativePath ||
+      normalizedRelativePath.split('/').some(segment => segment === '.' || segment === '..')
+    ) {
+      return null;
+    }
+
+    const resolvedPath = new URL(normalizedRelativePath, cpBaseUrl).toString();
+
+    if (!this.isAllowedCloudProviderPath(cpBaseUrl, resolvedPath)) {
+      return null;
+    }
+
+    return resolvedPath;
+  }
+
   private async loadCPFile(cpBaseUrl: string, path: string) {
-    if (!path.startsWith(cpBaseUrl)) {
+    const resolvedPath = this.resolveCloudProviderPath(cpBaseUrl, path);
+
+    if (!resolvedPath) {
       throw new BadRequestException(`Invalid paramater 'path' ${path}`);
     }
 
-    const file: Stream = await this.fileService.getFile(path);
+    const file: Stream = await this.fileService.getFile(resolvedPath);
 
     return file;
   }
