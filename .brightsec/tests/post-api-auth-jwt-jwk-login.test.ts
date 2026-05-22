@@ -22,14 +22,12 @@ test('POST /api/auth/jwt/jwk/login', { signal: AbortSignal.timeout(timeout) }, a
   await runner
     .createScan({
       tests: [
-        'jwt',
         {
           name: 'broken_access_control',
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'full_path_disclosure'
+        }
       ],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {

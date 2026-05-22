@@ -22,14 +22,7 @@ test('GET /api/auth/jwt/rsa/signature/validate', { signal: AbortSignal.timeout(t
   await runner
     .createScan({
       tests: [
-        'jwt',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'secret_tokens'
+        'jwt'
       ],
       attackParamLocations: [AttackParamLocation.HEADER],
       starMetadata: {

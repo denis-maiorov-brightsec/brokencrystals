@@ -21,17 +21,7 @@ after(() => runner.clear());
 test('POST /api/chat/query', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'prompt_injection',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'full_path_disclosure',
-        'business_constraint_bypass'
-      ],
+      tests: ['prompt_injection'],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

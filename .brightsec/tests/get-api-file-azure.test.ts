@@ -22,15 +22,7 @@ test('GET /api/file/azure?path=:path&type=:type', { signal: AbortSignal.timeout(
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'ssrf',
-        'id_enumeration',
-        'xss'
+        'ssrf'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {

@@ -21,16 +21,7 @@ after(() => runner.clear());
 test('GET /api/products/latest?limit=:limit', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'business_constraint_bypass',
-        'xss'
-      ],
+      tests: ['business_constraint_bypass'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

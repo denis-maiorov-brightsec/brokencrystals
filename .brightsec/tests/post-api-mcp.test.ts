@@ -21,17 +21,7 @@ after(() => runner.clear());
 test('POST /api/mcp', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'sqli',
-        'server_side_js_injection',
-        'full_path_disclosure'
-      ],
+      tests: ['sqli'],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

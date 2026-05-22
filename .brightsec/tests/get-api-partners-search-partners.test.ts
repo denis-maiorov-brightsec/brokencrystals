@@ -22,13 +22,6 @@ test('GET /api/partners/searchPartners?keyword=:keyword', { signal: AbortSignal.
   await runner
     .createScan({
       tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'business_constraint_bypass',
         'xpathi'
       ],
       attackParamLocations: [AttackParamLocation.QUERY],

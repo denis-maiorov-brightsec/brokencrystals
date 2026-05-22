@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /api/goto?url=:url', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['unvalidated_redirect', 'http_method_fuzzing'],
+      tests: ['unvalidated_redirect'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

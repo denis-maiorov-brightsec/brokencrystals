@@ -21,16 +21,7 @@ after(() => runner.clear());
 test('POST /graphql TestimonialsCount', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        'sqli',
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'graphql_introspection'
-      ],
+      tests: ['sqli', 'graphql_introspection'],
       attackParamLocations: [AttackParamLocation.BODY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

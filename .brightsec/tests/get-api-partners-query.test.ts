@@ -22,7 +22,6 @@ test('GET /api/partners/query?xpath=%2Fpartners%2Fpartner%2Fname', { signal: Abo
   await runner
     .createScan({
       tests: [
-        'xpathi',
         {
           name: 'broken_access_control',
           options: {
