@@ -68,8 +68,9 @@ services:
     healthcheck:
       interval: 5s
       retries: 10
-      test: ['CMD', 'wget', '--spider', '-q', 'http://nodejs:3000/api/config']
+      test: ['CMD', 'node', '-e', "require('http').get('http://127.0.0.1:3000/', (res) => process.exit(res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
       timeout: 30s
+      start_period: 30s
     environment:
       URL: http://localhost:3000
       GRPC_WEB_PROXY_URL: ${GRPC_WEB_PROXY_URL}
