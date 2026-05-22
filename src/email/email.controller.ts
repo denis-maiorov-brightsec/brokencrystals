@@ -7,7 +7,8 @@ import {
   HttpStatus,
   Logger,
   Query,
-  Res
+  Res,
+  UseGuards
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { EmailService } from './email.service';
@@ -17,6 +18,7 @@ import {
   SWAGGER_DESC_SEND_EMAIL
 } from './email.controller.swagger.desc';
 import splitUriIntoParamsPPVulnerable from '../utils/url';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('/api/email')
 @ApiTags('Emails controller')
@@ -110,6 +112,7 @@ export class EmailController {
   }
 
   @Get('/getEmails')
+  @UseGuards(AuthGuard)
   @ApiOperation({
     description: SWAGGER_DESC_GET_EMAILS
   })

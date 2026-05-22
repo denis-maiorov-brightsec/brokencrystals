@@ -1,6 +1,6 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Testimonial } from '../model/testimonial.entity';
 
 @Injectable()
@@ -58,10 +58,19 @@ export class TestimonialsService {
     try {
       this.logger.debug(`Saved new testimonial`);
 
-      return (await this.em.getConnection().execute(query))[0].count as number;
+      const result = await this.em.getConnection().execute(query);
+      const rawCount = result?.[0]?.count;
+      const count = Number(rawCount);
+
+      if (!Number.isInteger(count)) {
+        this.logger.warn(`Failed to execute query due to invalid response format`);
+        throw new InternalServerErrorException('Unable to process request');
+      }
+
+      return count;
     } catch (err) {
-      this.logger.warn(`Failed to execute query. Error: ${err.message}`);
-      return err.message;
+      this.logger.warn(`Failed to execute query`);
+      throw new InternalServerErrorException('Unable to process request');
     }
   }
 }

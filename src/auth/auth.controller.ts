@@ -224,6 +224,8 @@ export class AuthController {
   }
 
   @Get('oidc-client')
+  @UseGuards(AuthGuard)
+  @JwtType(JwtProcessorType.RSA)
   @ApiResponse({
     type: OidcClientResponse,
     status: HttpStatus.OK
@@ -231,8 +233,17 @@ export class AuthController {
   @ApiOperation({
     description: SWAGGER_DESC_CALL_OIDC_CLIENT
   })
-  async getOidcClient(): Promise<OidcClientResponse> {
+  async getOidcClient(@Req() request: FastifyRequest): Promise<OidcClientResponse> {
     this.logger.debug('Call getOidcClient');
+
+    const requesterEmail = this.originEmail(request);
+    const requester = await this.usersService.findByEmail(requesterEmail);
+
+    if (!requester?.isAdmin) {
+      throw new ForbiddenException({
+        error: 'Insufficient permissions'
+      });
+    }
 
     const client = this.keyCloakService.getClient(ClientType.PUBLIC);
 
@@ -446,6 +457,13 @@ export class AuthController {
   ): Promise<LoginResponse> {
     this.logger.debug('Call loginWithJWKJwt');
     const profile = await this.loginBasic(req);
+    const user = await this.usersService.findByEmail(profile.email);
+
+    if (user.isAdmin) {
+      throw new ForbiddenException({
+        error: 'Insufficient permissions'
+      });
+    }
 
     res.header(
       'authorization',
@@ -661,6 +679,22 @@ export class AuthController {
     return {
       secret: 'this is our secret'
     };
+  }
+
+  private originEmail(request: FastifyRequest): string {
+    const authorization = request.headers.authorization;
+
+    if (!authorization) {
+      throw new UnauthorizedException({
+        error: 'Invalid credentials'
+      });
+    }
+
+    const token = authorization.startsWith('Bearer ')
+      ? authorization.substring(7)
+      : authorization;
+
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString()).user;
   }
 
   private async loginOidc(req: LoginRequest): Promise<LoginData> {

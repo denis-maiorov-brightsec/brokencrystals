@@ -71,14 +71,10 @@ export class AuthGuard implements CanActivate {
       context.getHandler()
     );
 
-    try {
-      return !!(await this.authService.validateToken(token, processorType));
-    } catch {
-      return !!(await this.authService.validateToken(
-        token,
-        JwtProcessorType.BEARER
-      ));
-    }
+    const effectiveProcessorType =
+      processorType !== undefined ? processorType : JwtProcessorType.BEARER;
+
+    return !!(await this.authService.validateToken(token, effectiveProcessorType));
   }
 
   private checkIsBearer(bearer: string): boolean {

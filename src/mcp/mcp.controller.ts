@@ -158,12 +158,13 @@ export class McpController {
           };
       }
     } catch (error) {
-      this.logger.error(`MCP Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`MCP Error: ${errorMessage}`);
       return {
         jsonrpc: '2.0',
         error: {
           code: -32603,
-          message: `Internal error: ${error.message}`
+          message: 'Internal error'
         },
         id: request.id
       };

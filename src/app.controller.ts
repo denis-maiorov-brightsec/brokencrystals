@@ -72,10 +72,11 @@ export class AppController {
   async renderTemplate(@Body() raw): Promise<string> {
     if (typeof raw === 'string' || Buffer.isBuffer(raw)) {
       const text = raw.toString().trim();
-      const res = dotT.compile(text)();
-      this.logger.debug(`Rendered template: ${res}`);
-      return res;
+      this.logger.debug(`Rendered template: ${text}`);
+      return text;
     }
+
+    throw new HttpException('Invalid body format', HttpStatus.BAD_REQUEST);
   }
 
   @Get('goto')
@@ -88,7 +89,16 @@ export class AppController {
   })
   @Redirect()
   async redirect(@Query('url') url: string) {
-    return { url };
+    const targetUrl = (url || '').trim();
+
+    if (!targetUrl || !targetUrl.startsWith('/') || targetUrl.startsWith('//')) {
+      throw new HttpException(
+        'Only local application redirects are allowed',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return { url: targetUrl };
   }
 
   @Post('metadata')
@@ -114,15 +124,32 @@ export class AppController {
   })
   @Header('content-type', 'text/xml')
   async xml(@Body() xml: string): Promise<string> {
-    const xmlDoc = parseXml(decodeURIComponent(xml), {
-      noent: true,
-      dtdvalid: true,
-      recover: true
-    });
-    this.logger.debug(xmlDoc);
-    this.logger.debug(xmlDoc.getDtd());
+    if (typeof xml !== 'string' && !Buffer.isBuffer(xml)) {
+      throw new HttpException('Invalid body format', HttpStatus.BAD_REQUEST);
+    }
 
-    return xmlDoc.toString(true);
+    try {
+      const xmlDoc = parseXml(decodeURIComponent(xml.toString()), {
+        noent: false,
+        dtdvalid: false,
+        recover: false
+      });
+
+      if (xmlDoc.find('//*[local-name()="script"]').length > 0) {
+        throw new HttpException('Invalid XML content', HttpStatus.BAD_REQUEST);
+      }
+
+      this.logger.debug(xmlDoc);
+      this.logger.debug(xmlDoc.getDtd());
+
+      return xmlDoc.toString(true);
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new HttpException('Invalid XML content', HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Options()

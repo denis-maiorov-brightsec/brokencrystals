@@ -136,7 +136,10 @@ async function bootstrap() {
     serveDotFiles: true
   });
 
-  for (const dir of readdirSync(join(__dirname, '..', 'client', 'vcs'))) {
+  const blockedVcsDirs = new Set(['git', 'svn', 'hg']);
+  for (const dir of readdirSync(join(__dirname, '..', 'client', 'vcs')).filter(
+    (dir) => !blockedVcsDirs.has(dir.replace(/^\.+/, '').toLowerCase())
+  )) {
     await server.register(fastifyStatic, {
       root: join(__dirname, '..', 'client', 'vcs', dir),
       prefix: `/.${dir}`,

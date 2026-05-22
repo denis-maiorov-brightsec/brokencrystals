@@ -257,14 +257,11 @@ export class UsersController {
   @ApiUnauthorizedResponse({
     description: 'Returns when isAdmin is false'
   })
-  async deleteUserPhotoById(
-    @Param('id') id: number,
-    @Query('isAdmin') isAdminParam: string
-  ) {
-    isAdminParam = isAdminParam.toLowerCase();
-    const isAdmin =
-      isAdminParam === 'true' || isAdminParam === '1' ? true : false;
-    if (!isAdmin) {
+  async deleteUserPhotoById(@Param('id') id: number, @Req() req: FastifyRequest) {
+    const requesterEmail = this.originEmail(req);
+    const requester = await this.usersService.findByEmail(requesterEmail);
+
+    if (!requester.isAdmin) {
       throw new UnauthorizedException();
     }
 

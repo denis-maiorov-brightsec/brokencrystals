@@ -38,6 +38,7 @@ import {
 @ApiTags('Products controller')
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
+  private readonly latestProductsLimit = 3;
 
   constructor(private readonly productsService: ProductsService) {}
 
@@ -95,7 +96,6 @@ export class ProductsController {
   }
 
   @Get('latest')
-  @ApiQuery({ name: 'limit', example: 3, required: false })
   @ApiOperation({
     description: API_DESC_GET_LATEST_PRODUCTS
   })
@@ -103,17 +103,11 @@ export class ProductsController {
     type: ProductDto,
     isArray: true
   })
-  async getLatestProducts(
-    @Query('limit') limit: number
-  ): Promise<ProductDto[]> {
+  async getLatestProducts(): Promise<ProductDto[]> {
     this.logger.debug('Get latest products.');
-    if (limit && isNaN(limit)) {
-      throw new BadRequestException('Limit must be a number');
-    }
-    if (limit && limit < 0) {
-      throw new BadRequestException('Limit must be positive');
-    }
-    const products = await this.productsService.findLatest(limit || 3);
+    const products = await this.productsService.findLatest(
+      this.latestProductsLimit
+    );
     return products.map((p: Product) => new ProductDto(p));
   }
 

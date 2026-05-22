@@ -157,8 +157,10 @@ export class McpService {
         ]
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`count_tool execution failed: ${errorMessage}`);
       return {
-        content: [{ type: 'text', text: `Error: ${error.message}` }],
+        content: [{ type: 'text', text: 'Error: Unable to process request' }],
         isError: true
       };
     }

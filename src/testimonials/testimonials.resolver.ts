@@ -36,9 +36,14 @@ export class TestimonialsResolver {
   @Query(() => Int, {
     description: API_DESC_GET_TESTIMONIALS_ON_SQL_QUERY
   })
-  testimonialsCount(@Args('query') query: string): Promise<number> {
+  async testimonialsCount(@Args('query') query: string): Promise<number> {
     this.logger.debug('Get count of testimonials');
-    return this.testimonialsService.count(query);
+
+    try {
+      return await this.testimonialsService.count(query);
+    } catch {
+      throw new InternalServerErrorException('Unable to process request');
+    }
   }
 
   @Mutation(() => Testimonial, {
