@@ -179,7 +179,9 @@ export class PartnersController {
         throw new Error('Login attempt failed!');
       }
 
-      return xmlStr;
+      // Do not return partner resource data from login endpoint.
+      // Authentication should only return login status.
+      return '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n<status>ok</status>\n</root>';
     } catch (err) {
       const errStr = err.toString();
       const errorMessage = errStr.includes('Unterminated string literal')
