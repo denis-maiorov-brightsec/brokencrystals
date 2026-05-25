@@ -21,6 +21,7 @@ import { EmailModule } from './email/email.module';
 import { ChatModule } from './chat/chat.module';
 import { SafeFilesModule } from './safe-files/safe-files.module';
 import { McpModule } from './mcp/mcp.module';
+import { NoSchemaIntrospectionCustomRule } from 'graphql';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { McpModule } from './mcp/mcp.module';
       driver: MercuriusDriver,
       graphiql: false,
       introspection: false,
+      validationRules: [NoSchemaIntrospectionCustomRule],
       autoSchemaFile: true
     }),
     PartnersModule,

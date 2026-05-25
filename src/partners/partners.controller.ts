@@ -40,20 +40,37 @@ export class PartnersController {
     return `concat(${parts.join(`, "'", `)})`;
   }
 
-  private isAllowedRawXPath(xpath: string): boolean {
+  private getScopedPartnerXPath(
+    username: string,
+    password: string,
+    xpath: string
+  ): string | null {
     const normalizedXPath = xpath?.trim();
 
-    // Allow only read-only access to public partner fields for anonymous callers.
-    // This prevents unauthorized access to restricted partner resources.
-    const allowedPublicXPathPatterns = [
-      /^\/partners\/partner\/(name|age|profession)$/,
-      /^\/partners\/partner\/residency$/,
-      /^\/partners\/partner\/residency\/@(country|state|city)$/
-    ];
+    // Explicitly allow only specific partner fields and scope results to the
+    // authenticated partner to prevent unauthorized data access.
+    const allowedPathToSuffix = {
+      '/partners/partner/name': '/name',
+      '/partners/partner/age': '/age',
+      '/partners/partner/profession': '/profession',
+      '/partners/partner/residency': '/residency',
+      '/partners/partner/residency/@country': '/residency/@country',
+      '/partners/partner/residency/@state': '/residency/@state',
+      '/partners/partner/residency/@city': '/residency/@city',
+      '/partners/partner/username': '/username',
+      '/partners/partner/wealth': '/wealth'
+    };
 
-    return allowedPublicXPathPatterns.some((pattern) =>
-      pattern.test(normalizedXPath)
-    );
+    const suffix = allowedPathToSuffix[normalizedXPath];
+
+    if (!suffix) {
+      return null;
+    }
+
+    const escapedUsername = this.getXPathStringLiteral(username);
+    const escapedPassword = this.getXPathStringLiteral(password);
+
+    return `//partners/partner[username/text()=${escapedUsername} and password/text()=${escapedPassword}]${suffix}`;
   }
 
   // **** This is a general XPATH injection EP - Will accept anything ****
@@ -64,6 +81,18 @@ export class PartnersController {
     example: '/partners/partner/name',
     required: true
   })
+  @ApiQuery({
+    name: 'username',
+    type: 'string',
+    example: 'walter100',
+    required: true
+  })
+  @ApiQuery({
+    name: 'password',
+    type: 'string',
+    example: 'Heisenberg123',
+    required: true
+  })
   @Header('content-type', 'text/xml')
   @ApiOperation({
     description: API_DESC_QUERY_PARTNERS_RAW
@@ -71,10 +100,21 @@ export class PartnersController {
   @ApiOkResponse({
     type: String
   })
-  async queryPartnersRaw(@Query('xpath') xpath: string): Promise<string> {
+  async queryPartnersRaw(
+    @Query('xpath') xpath: string,
+    @Query('username') username: string,
+    @Query('password') password: string
+  ): Promise<string> {
     this.logger.debug(`Getting partners with xpath expression "${xpath}"`);
 
-    if (!this.isAllowedRawXPath(xpath)) {
+    if (!username || !password) {
+      this.logger.warn('Blocked raw partners query due to missing credentials');
+      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+    }
+
+    const scopedXPath = this.getScopedPartnerXPath(username, password, xpath);
+
+    if (!scopedXPath) {
       this.logger.warn(
         `Blocked unauthorized raw partners query for xpath expression "${xpath}"`
       );
@@ -82,8 +122,19 @@ export class PartnersController {
     }
 
     try {
-      return this.partnersService.getPartnersProperties(xpath);
+      const xmlStr = this.partnersService.getPartnersProperties(scopedXPath);
+
+      // Empty result means credentials are invalid for the requested partner scope.
+      if (!xmlStr || xmlStr.includes('<root>\n\n</root>')) {
+        throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+      }
+
+      return xmlStr;
     } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
       throw new HttpException(
         `Failed to load XML using XPATH. Details: ${err}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -119,15 +170,12 @@ export class PartnersController {
     this.logger.debug(`Trying to login partner with username ${username}`);
 
     try {
-      const escapedUsername = this.getXPathStringLiteral(username);
-      const escapedPassword = this.getXPathStringLiteral(password);
-      const xpath = `//partners/partner[username/text()=${escapedUsername} and password/text()=${escapedPassword}]/*`;
-      const xmlStr = this.partnersService.getPartnersProperties(xpath);
+      const xmlStr = this.partnersService.getPartnerLoginProperties(
+        username,
+        password
+      );
 
-      // Check if account's data contains any information - If not, the login failed!
-      if (
-        !(xmlStr && xmlStr.includes('password') && xmlStr.includes('wealth'))
-      ) {
+      if (!xmlStr) {
         throw new Error('Login attempt failed!');
       }
 
