@@ -81,8 +81,10 @@ export class PartnersService {
   }
 
   private getSafePartnerLoginNodes(partnerNode: Node): SelectReturnType {
+    // Enforce least privilege at the data source: never include restricted
+    // account fields in authentication response payloads.
     return xpath.select(
-      './name | ./age | ./profession | ./residency | ./username | ./wealth',
+      './name | ./age | ./profession | ./residency | ./username',
       partnerNode
     );
   }

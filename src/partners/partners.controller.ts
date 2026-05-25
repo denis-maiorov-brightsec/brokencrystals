@@ -73,13 +73,6 @@ export class PartnersController {
     return `//partners/partner[username/text()=${escapedUsername} and password/text()=${escapedPassword}]${suffix}`;
   }
 
-  private stripSensitivePartnerFields(xml: string): string {
-    return xml
-      .replace(/\s*<password>[\s\S]*?<\/password>\s*/gi, '\n')
-      .replace(/\s*<wealth>[\s\S]*?<\/wealth>\s*/gi, '\n')
-      .replace(/\n{3,}/g, '\n\n');
-  }
-
   // **** This is a general XPATH injection EP - Will accept anything ****
   @Get('query')
   @ApiQuery({
@@ -186,8 +179,7 @@ export class PartnersController {
         throw new Error('Login attempt failed!');
       }
 
-      // Defense-in-depth: never expose restricted account fields from login.
-      return this.stripSensitivePartnerFields(xmlStr);
+      return xmlStr;
     } catch (err) {
       const errStr = err.toString();
       const errorMessage = errStr.includes('Unterminated string literal')
