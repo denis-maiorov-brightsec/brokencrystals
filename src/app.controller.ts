@@ -70,16 +70,23 @@ export class AppController {
     description: 'Rendered result'
   })
   async renderTemplate(@Body() raw): Promise<string> {
-    if (typeof raw === 'string' || Buffer.isBuffer(raw)) {
-      const text = raw.toString().trim();
-      const res = dotT.compile(text)();
-      this.logger.debug(`Rendered template: ${res}`);
-      return res;
+    if (!(typeof raw === 'string' || Buffer.isBuffer(raw))) {
+      throw new HttpException('Input is invalid', HttpStatus.BAD_REQUEST);
     }
+
+    const text = raw.toString().trim();
+
+    // Keep template definition static and pass user input only as data
+    // to prevent Server-Side Template Injection.
+    const safeTemplate = dotT.template('{{=it.content}}');
+    const res = safeTemplate({ content: text });
+
+    this.logger.debug(`Rendered template: ${res}`);
+    return res;
   }
 
   @Get('goto')
-  @ApiQuery({ name: 'url', example: 'https://google.com', required: true })
+  @ApiQuery({ name: 'url', example: '/dashboard', required: true })
   @ApiOperation({
     description: API_DESC_REDIRECT_REQUEST
   })
@@ -88,7 +95,23 @@ export class AppController {
   })
   @Redirect()
   async redirect(@Query('url') url: string) {
-    return { url };
+    if (typeof url !== 'string') {
+      throw new HttpException('URL is invalid', HttpStatus.BAD_REQUEST);
+    }
+
+    const normalizedUrl = url.trim();
+
+    // Allow only local absolute paths to prevent untrusted external redirects.
+    if (
+      !normalizedUrl.startsWith('/') ||
+      normalizedUrl.startsWith('//') ||
+      normalizedUrl.includes('\r') ||
+      normalizedUrl.includes('\n')
+    ) {
+      throw new HttpException('URL is invalid', HttpStatus.BAD_REQUEST);
+    }
+
+    return { url: normalizedUrl };
   }
 
   @Post('metadata')
@@ -114,15 +137,59 @@ export class AppController {
   })
   @Header('content-type', 'text/xml')
   async xml(@Body() xml: string): Promise<string> {
-    const xmlDoc = parseXml(decodeURIComponent(xml), {
-      noent: true,
-      dtdvalid: true,
-      recover: true
-    });
-    this.logger.debug(xmlDoc);
-    this.logger.debug(xmlDoc.getDtd());
+    if (!(typeof xml === 'string' || Buffer.isBuffer(xml))) {
+      throw new HttpException('Input is invalid', HttpStatus.BAD_REQUEST);
+    }
 
-    return xmlDoc.toString(true);
+    try {
+      const decodedXml = decodeURIComponent(xml.toString());
+      const xmlDoc = parseXml(decodedXml, {
+        noent: false,
+        dtdvalid: false,
+        recover: false
+      });
+
+      const scriptNodes = xmlDoc.find(
+        '//*[translate(local-name(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")="script"]'
+      );
+      if (scriptNodes.length > 0) {
+        throw new HttpException('Invalid XML data', HttpStatus.BAD_REQUEST);
+      }
+
+      const nodes = xmlDoc.find('//*');
+      for (const node of nodes) {
+        const attrs = node.attrs();
+        for (const attr of attrs) {
+          const attrName = attr.name().toLowerCase();
+          const attrValue = attr
+            .value()
+            .trim()
+            .toLowerCase();
+
+          if (attrName.startsWith('on')) {
+            throw new HttpException('Invalid XML data', HttpStatus.BAD_REQUEST);
+          }
+
+          if (
+            (attrName === 'href' || attrName.endsWith(':href')) &&
+            attrValue.startsWith('javascript:')
+          ) {
+            throw new HttpException('Invalid XML data', HttpStatus.BAD_REQUEST);
+          }
+        }
+      }
+
+      this.logger.debug(xmlDoc);
+      this.logger.debug(xmlDoc.getDtd());
+
+      return xmlDoc.toString(true);
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new HttpException('Invalid XML data', HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Options()

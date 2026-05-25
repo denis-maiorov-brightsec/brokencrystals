@@ -157,8 +157,17 @@ export class McpService {
         ]
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown internal error';
+      this.logger.error(`Failed to execute count_tool: ${errorMessage}`);
+
       return {
-        content: [{ type: 'text', text: `Error: ${error.message}` }],
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Failed to execute query'
+          }
+        ],
         isError: true
       };
     }

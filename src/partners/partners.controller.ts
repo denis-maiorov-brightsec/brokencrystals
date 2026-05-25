@@ -27,6 +27,35 @@ export class PartnersController {
 
   constructor(private readonly partnersService: PartnersService) {}
 
+  private getXPathStringLiteral(value: string): string {
+    if (!value.includes("'")) {
+      return `'${value}'`;
+    }
+
+    if (!value.includes('"')) {
+      return `"${value}"`;
+    }
+
+    const parts = value.split("'").map((part) => `'${part}'`);
+    return `concat(${parts.join(`, "'", `)})`;
+  }
+
+  private isAllowedRawXPath(xpath: string): boolean {
+    const normalizedXPath = xpath?.trim();
+
+    // Allow only read-only access to public partner fields for anonymous callers.
+    // This prevents unauthorized access to restricted partner resources.
+    const allowedPublicXPathPatterns = [
+      /^\/partners\/partner\/(name|age|profession)$/,
+      /^\/partners\/partner\/residency$/,
+      /^\/partners\/partner\/residency\/@(country|state|city)$/
+    ];
+
+    return allowedPublicXPathPatterns.some((pattern) =>
+      pattern.test(normalizedXPath)
+    );
+  }
+
   // **** This is a general XPATH injection EP - Will accept anything ****
   @Get('query')
   @ApiQuery({
@@ -44,6 +73,13 @@ export class PartnersController {
   })
   async queryPartnersRaw(@Query('xpath') xpath: string): Promise<string> {
     this.logger.debug(`Getting partners with xpath expression "${xpath}"`);
+
+    if (!this.isAllowedRawXPath(xpath)) {
+      this.logger.warn(
+        `Blocked unauthorized raw partners query for xpath expression "${xpath}"`
+      );
+      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+    }
 
     try {
       return this.partnersService.getPartnersProperties(xpath);
@@ -80,12 +116,12 @@ export class PartnersController {
     @Query('username') username: string,
     @Query('password') password: string
   ): Promise<string> {
-    this.logger.debug(
-      `Trying to login partner with username ${username} using password ${password}`
-    );
+    this.logger.debug(`Trying to login partner with username ${username}`);
 
     try {
-      const xpath = `//partners/partner[username/text()='${username}' and password/text()='${password}']/*`;
+      const escapedUsername = this.getXPathStringLiteral(username);
+      const escapedPassword = this.getXPathStringLiteral(password);
+      const xpath = `//partners/partner[username/text()=${escapedUsername} and password/text()=${escapedPassword}]/*`;
       const xmlStr = this.partnersService.getPartnersProperties(xpath);
 
       // Check if account's data contains any information - If not, the login failed!
@@ -128,7 +164,8 @@ export class PartnersController {
     this.logger.debug(`Searching partner names by the keyword "${keyword}"`);
 
     try {
-      const xpath = `//partners/partner/name[contains(., '${keyword}')]`;
+      const escapedKeyword = this.getXPathStringLiteral(keyword);
+      const xpath = `//partners/partner/name[contains(., ${escapedKeyword})]`;
       return this.partnersService.getPartnersProperties(xpath);
     } catch (err) {
       const errStr = err.toString();
