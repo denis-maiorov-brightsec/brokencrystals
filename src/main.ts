@@ -97,6 +97,46 @@ async function bootstrap() {
         : null
   });
 
+  const INTROSPECTION_PATTERN = /__schema\b|__type\b/i;
+
+  server.addHook('preValidation', (req, reply, done) => {
+    if (!req.url?.startsWith('/graphql')) {
+      done();
+      return;
+    }
+
+    const body = req.body;
+    const bodyQuery =
+      typeof body === 'string'
+        ? body
+        : Buffer.isBuffer(body)
+          ? body.toString('utf-8')
+          : body &&
+              typeof body === 'object' &&
+              typeof (body as { query?: unknown }).query === 'string'
+            ? ((body as { query: string }).query ?? '')
+            : '';
+
+    const queryParams = req.query;
+    const queryParamQuery =
+      queryParams &&
+      typeof queryParams === 'object' &&
+      typeof (queryParams as { query?: unknown }).query === 'string'
+        ? ((queryParams as { query: string }).query ?? '')
+        : '';
+
+    const gqlSource = `${bodyQuery}\n${queryParamQuery}`;
+
+    if (INTROSPECTION_PATTERN.test(gqlSource)) {
+      reply.status(400).send({
+        errors: [{ message: 'GraphQL introspection is disabled' }]
+      });
+      return;
+    }
+
+    done();
+  });
+
   server.setDefaultRoute((req, res) => {
     if (req.url && req.url.startsWith('/api')) {
       res.statusCode = 404;
@@ -137,6 +177,14 @@ async function bootstrap() {
   });
 
   for (const dir of readdirSync(join(__dirname, '..', 'client', 'vcs'))) {
+    if (
+      dir.toLowerCase() === 'svn' ||
+      dir.toLowerCase() === 'hg' ||
+      dir.toLowerCase() === 'git'
+    ) {
+      continue;
+    }
+
     await server.register(fastifyStatic, {
       root: join(__dirname, '..', 'client', 'vcs', dir),
       prefix: `/.${dir}`,

@@ -224,6 +224,7 @@ export class AuthController {
   }
 
   @Get('oidc-client')
+  @UseGuards(AuthGuard)
   @ApiResponse({
     type: OidcClientResponse,
     status: HttpStatus.OK
@@ -445,7 +446,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<LoginResponse> {
     this.logger.debug('Call loginWithJWKJwt');
-    const profile = await this.loginBasic(req);
+    const profile = await this.loginBasic(req, false);
 
     res.header(
       'authorization',
@@ -689,7 +690,10 @@ export class AuthController {
     }
   }
 
-  private async loginBasic(req: LoginRequest): Promise<LoginData> {
+  private async loginBasic(
+    req: LoginRequest,
+    allowAdmin = true
+  ): Promise<LoginData> {
     let user: User;
 
     try {
@@ -709,6 +713,12 @@ export class AuthController {
     if (!user.isBasic) {
       throw new ForbiddenException({
         error: 'Invalid authentication method for this user'
+      });
+    }
+
+    if (!allowAdmin && user.isAdmin) {
+      throw new ForbiddenException({
+        error: 'Insufficient permissions for this authentication flow'
       });
     }
 

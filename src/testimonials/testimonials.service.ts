@@ -1,6 +1,6 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Testimonial } from '../model/testimonial.entity';
 
 @Injectable()
@@ -58,10 +58,18 @@ export class TestimonialsService {
     try {
       this.logger.debug(`Saved new testimonial`);
 
-      return (await this.em.getConnection().execute(query))[0].count as number;
+      const countValue = (await this.em.getConnection().execute(query))?.[0]?.count;
+      const normalizedCount =
+        typeof countValue === 'number' ? countValue : Number(countValue);
+
+      if (!Number.isInteger(normalizedCount)) {
+        throw new Error('Invalid count value returned from database query');
+      }
+
+      return normalizedCount;
     } catch (err) {
-      this.logger.warn(`Failed to execute query. Error: ${err.message}`);
-      return err.message;
+      this.logger.warn(`Failed to execute query`, err);
+      throw new InternalServerErrorException('Failed to get testimonials count');
     }
   }
 }

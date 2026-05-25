@@ -70,6 +70,47 @@ export class PartnersService {
     return `${this.XML_HEADER}\n<root>\n${xmlNodes.join('\n')}\n</root>`;
   }
 
+  private getChildNodeText(parentNode: Node, childNodeName: string): string {
+    const childNodes = xpath.select(`./${childNodeName}/text()`, parentNode);
+
+    if (!Array.isArray(childNodes) || childNodes.length === 0) {
+      return '';
+    }
+
+    return childNodes[0]?.toString()?.trim() || '';
+  }
+
+  private getSafePartnerLoginNodes(partnerNode: Node): SelectReturnType {
+    // Enforce least privilege at the data source: never include restricted
+    // account fields in authentication response payloads.
+    return xpath.select(
+      './name | ./age | ./profession | ./residency | ./username',
+      partnerNode
+    );
+  }
+
+  getPartnerLoginProperties(username: string, password: string): string | null {
+    const partnersXMLObj = this.getPartnersXMLObj();
+    const partnerNodes = xpath.select('//partners/partner', partnersXMLObj);
+
+    if (!Array.isArray(partnerNodes)) {
+      return null;
+    }
+
+    for (const partnerNode of partnerNodes) {
+      const partnerUsername = this.getChildNodeText(partnerNode, 'username');
+      const partnerPassword = this.getChildNodeText(partnerNode, 'password');
+
+      if (partnerUsername === username && partnerPassword === password) {
+        const safeNodes = this.getSafePartnerLoginNodes(partnerNode);
+        const xmlNodes = Array.isArray(safeNodes) ? safeNodes : [];
+        return this.getFormattedXMLOutput(xmlNodes);
+      }
+    }
+
+    return null;
+  }
+
   getPartnersProperties(xpathExpression: string): string {
     let xmlNodes = this.selectPartnerPropertiesByXPATH(xpathExpression);
 

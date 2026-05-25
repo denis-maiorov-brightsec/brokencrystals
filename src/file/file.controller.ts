@@ -50,11 +50,40 @@ export class FileController {
   }
 
   private async loadCPFile(cpBaseUrl: string, path: string) {
-    if (!path.startsWith(cpBaseUrl)) {
+    let providerBase: URL;
+    let requestedPath: URL;
+
+    try {
+      providerBase = new URL(cpBaseUrl);
+      requestedPath = new URL(path);
+    } catch {
       throw new BadRequestException(`Invalid paramater 'path' ${path}`);
     }
 
-    const file: Stream = await this.fileService.getFile(path);
+    if (
+      requestedPath.protocol !== providerBase.protocol ||
+      requestedPath.hostname !== providerBase.hostname ||
+      requestedPath.port !== providerBase.port ||
+      requestedPath.search ||
+      requestedPath.hash ||
+      requestedPath.username ||
+      requestedPath.password
+    ) {
+      throw new BadRequestException(`Invalid paramater 'path' ${path}`);
+    }
+
+    const providerPath = providerBase.pathname.endsWith('/')
+      ? providerBase.pathname
+      : `${providerBase.pathname}/`;
+    const requestPath = requestedPath.pathname.endsWith('/')
+      ? requestedPath.pathname
+      : `${requestedPath.pathname}/`;
+
+    if (requestPath !== providerPath) {
+      throw new BadRequestException(`Invalid paramater 'path' ${path}`);
+    }
+
+    const file: Stream = await this.fileService.getFile(requestedPath.toString());
 
     return file;
   }
