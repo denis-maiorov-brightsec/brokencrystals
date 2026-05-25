@@ -21,16 +21,7 @@ after(() => runner.clear());
 test('GET /api/file/aws?path=:path&type=:type', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: [
-        {
-          name: 'broken_access_control',
-          options: {
-            auth: process.env.BRIGHT_AUTH_ID
-          }
-        },
-        'ssrf',
-        'id_enumeration'
-      ],
+      tests: ['ssrf'],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

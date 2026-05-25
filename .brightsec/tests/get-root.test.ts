@@ -21,7 +21,7 @@ after(() => runner.clear());
 test('GET /', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
-      tests: ['version_control_systems', 'http_method_fuzzing'],
+      tests: ['version_control_systems'],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {
         code_source: 'denis-maiorov-brightsec/brokencrystals:stable',

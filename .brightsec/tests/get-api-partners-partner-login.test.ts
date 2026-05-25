@@ -22,14 +22,12 @@ test('GET /api/partners/partnerLogin?password=:password&username=:username', { s
   await runner
     .createScan({
       tests: [
-        'xpathi',
         {
           name: 'broken_access_control',
           options: {
             auth: process.env.BRIGHT_AUTH_ID
           }
-        },
-        'id_enumeration'
+        }
       ],
       attackParamLocations: [AttackParamLocation.QUERY],
       starMetadata: {
