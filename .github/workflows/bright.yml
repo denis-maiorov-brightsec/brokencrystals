@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      CI_AGENT_BASE_URL: https://36c91a6822206a.lhr.life
+      CI_AGENT_BASE_URL: https://0e1336c052b5f6.lhr.life
       CI_AGENT_RUN_ID: ${{ github.run_id }}
       CI_AGENT_REPOSITORY: ${{ github.repository }}
       CI_AGENT_WORKFLOW_BRANCH: ${{ github.head_ref }}
