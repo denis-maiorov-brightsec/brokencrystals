@@ -72,7 +72,7 @@ jobs:
               }'
           )"
 
-          curl -fsS -i \
+          curl -sS -i \
             -X POST "${CI_AGENT_BASE_URL%/}/ci-agent/repair" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${token}" \
