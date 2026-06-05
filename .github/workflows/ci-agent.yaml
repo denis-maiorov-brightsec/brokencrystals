@@ -1,0 +1,79 @@
+name: CI agent curl smoke
+
+on:
+  pull_request:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  smoke-ci-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test CI agent repair endpoint
+        shell: bash
+        env:
+          CI_AGENT_BASE_URL: https://development.playground.brightsec.com/star/
+          CI_AGENT_RUN_ID: ${{ github.run_id }}
+          CI_AGENT_REPOSITORY: ${{ github.repository }}
+          CI_AGENT_WORKFLOW_BRANCH: ${{ github.event.pull_request.head.ref }}
+          CI_AGENT_JOB_NAME: smoke-ci-agent
+          CI_AGENT_WORKFLOW_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          audience="${CI_AGENT_BASE_URL%/}"
+
+          separator='?'
+          if [[ "${ACTIONS_ID_TOKEN_REQUEST_URL}" == *\?* ]]; then
+            separator='&'
+          fi
+
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}${separator}audience=$(jq -rn --arg v "$audience" '$v|@uri')"
+
+          token="$(
+            curl -fsS \
+              -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+              "$oidc_url" | jq -r '.value'
+          )"
+
+          payload="$(
+            jq -n \
+              --argjson request_id 1 \
+              --argjson run_id "$CI_AGENT_RUN_ID" \
+              --arg repository "$CI_AGENT_REPOSITORY" \
+              --arg workflow_branch "$CI_AGENT_WORKFLOW_BRANCH" \
+              --arg job_name "$CI_AGENT_JOB_NAME" \
+              --arg step_name "Pull request smoke test" \
+              --argjson step_index 1 \
+              --argjson attempt "$CI_AGENT_WORKFLOW_ATTEMPT" \
+              '{
+                request_id: $request_id,
+                session: {
+                  run_id: $run_id,
+                  repository: $repository,
+                  workflow_branch: $workflow_branch,
+                  job_name: $job_name,
+                  step_name: $step_name,
+                  step_index: $step_index,
+                  attempt: $attempt,
+                  script_path: ".github/workflows/ci-agent-smoke.yml",
+                  script: "echo pull-request-smoke-test",
+                  cwd: env.GITHUB_WORKSPACE
+                },
+                result: {
+                  kind: "failed_step",
+                  exit_code: 1,
+                  stdout: "pull request smoke stdout",
+                  stderr: "pull request smoke stderr"
+                }
+              }'
+          )"
+
+          curl -sS -i \
+            -X POST "${CI_AGENT_BASE_URL%/}/ci-agent/repair" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${token}" \
+            --data-binary "$payload"
