@@ -15,7 +15,7 @@ jobs:
       - name: Test CI agent repair endpoint
         shell: bash
         env:
-          CI_AGENT_BASE_URL: https://development.playground.brightsec.com
+          CI_AGENT_BASE_URL: https://development.playground.brightsec.com/star/
           CI_AGENT_RUN_ID: ${{ github.run_id }}
           CI_AGENT_REPOSITORY: ${{ github.repository }}
           CI_AGENT_WORKFLOW_BRANCH: ${{ github.event.pull_request.head.ref }}
